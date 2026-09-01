@@ -339,3 +339,52 @@
   measure();
   render(getProgress());
 })();
+
+/* Hero video plays once and holds on its final sky shot — no loop.
+   The logo fades in late in that shot and stays once the video ends.
+   Scrolling the hero out of view and back into view (leaving and
+   returning) replays it from the start, logo hidden again. */
+(function () {
+  const video = document.querySelector(".hero-video");
+  const logo = document.querySelector(".hero-video-logo");
+  const heroSection = document.querySelector(".hero");
+  if (!video || !logo || !heroSection) return;
+
+  video.loop = false;
+
+  const FADE_IN_BEFORE_END = 1.7; // seconds before the video ends
+
+  function onTimeUpdate() {
+    const duration = video.duration;
+    if (!isFinite(duration) || duration < FADE_IN_BEFORE_END) return;
+    if (video.currentTime >= duration - FADE_IN_BEFORE_END) {
+      logo.classList.add("is-visible");
+    }
+  }
+
+  function resetLogo() {
+    logo.classList.add("no-transition");
+    logo.classList.remove("is-visible");
+    requestAnimationFrame(() => logo.classList.remove("no-transition"));
+  }
+
+  video.addEventListener("timeupdate", onTimeUpdate);
+  video.addEventListener("ended", () => logo.classList.add("is-visible"));
+
+  let hasLeftView = false;
+  const observer = new IntersectionObserver((entries) => {
+    const isVisible = entries[0].isIntersecting;
+    if (!isVisible) {
+      hasLeftView = true;
+      return;
+    }
+    if (hasLeftView) {
+      hasLeftView = false;
+      resetLogo();
+      video.currentTime = 0;
+      video.play();
+    }
+  }, { threshold: 0.4 });
+
+  observer.observe(heroSection);
+})();
