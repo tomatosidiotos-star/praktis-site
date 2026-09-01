@@ -13,12 +13,66 @@
 
 * { box-sizing: border-box; }
 
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
 body {
   margin: 0;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Type scale — reusable heading styles (Inter, sizes/weights lifted from
+   the Figma redesign) meant to carry over to future ad-landing pages. */
+
+h1, .h1 {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(30px, 3.65vw, 70px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h2, .h2 {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(26px, 2.9vw, 52px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h3, .h3 {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(22px, 2.3vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h4, .h4 {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(20px, 1.6vw, 28px);
+  line-height: 1.2;
+}
+
+h5, .h5 {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(17px, 1.15vw, 20px);
+  line-height: 1.2;
+}
+
+h6, .h6 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .wrap {
@@ -70,7 +124,7 @@ img { display: block; max-width: 100%; }
   gap: 12px;
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .btn-accent {
@@ -79,10 +133,35 @@ img { display: block; max-width: 100%; }
   justify-content: center;
 }
 
-/* Pixel-dissolve hover (ported from Setl Tech's .btn-primary): a canvas
-   overlay fills in as a staggered grid of cells rather than a plain
-   crossfade. Label stays white throughout; the icon chip flips from
-   dark to accent at the animation's midpoint (see script.js). */
+.btn-accent:hover,
+.btn-accent:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(60, 131, 246, 0.32);
+}
+
+.btn-accent .btn-icon { background: #fff; }
+.btn-accent .btn-icon svg path { fill: var(--accent); }
+
+/* Stroke variant — outline pill, ported from Setl Tech's .btn-stroke
+   with black swapped for our accent blue. Quieter secondary CTA: sits
+   next to a solid .btn-accent without doubling up the loud fill. */
+.btn-stroke {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  justify-content: center;
+}
+
+.btn-stroke .btn-label { color: var(--accent); }
+.btn-stroke .btn-icon { background: var(--accent); }
+
+.btn-stroke:hover,
+.btn-stroke:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(60, 131, 246, 0.2);
+  background: #f4f8ff;
+}
+
 .btn-label {
   position: relative;
   z-index: 2;
@@ -93,8 +172,8 @@ img { display: block; max-width: 100%; }
 .btn-icon {
   position: relative;
   z-index: 2;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -104,12 +183,26 @@ img { display: block; max-width: 100%; }
 }
 
 .btn-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.btn-accent:hover .btn-icon svg { transform: rotate(45deg); }
+.btn-accent:hover .btn-icon svg,
+.btn-stroke:hover .btn-icon svg,
+.btn-accent:focus-visible .btn-icon svg,
+.btn-stroke:focus-visible .btn-icon svg { transform: rotate(45deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: box-shadow 0.3s ease, background 0.3s ease; }
+  .btn-accent:hover,
+  .btn-stroke:hover,
+  .btn-accent:focus-visible,
+  .btn-stroke:focus-visible { transform: none; }
+  .btn-icon svg { transition: none; }
+  .btn-accent:hover .btn-icon svg,
+  .btn-stroke:hover .btn-icon svg { transform: none; }
+}
 
 .header-cta {
   font-size: clamp(13px, 0.95vw, 14px);
@@ -118,19 +211,19 @@ img { display: block; max-width: 100%; }
 }
 
 .hero-cta {
-  font-size: clamp(17px, 1.35vw, 20px);
-  padding: clamp(13px, 1.15vw, 16px) clamp(13px, 1.15vw, 16px) clamp(13px, 1.15vw, 16px) clamp(20px, 2vw, 28px);
-  gap: clamp(12px, 1.1vw, 16px);
+  font-size: clamp(15px, 1.1vw, 17px);
+  padding: clamp(10px, 0.9vw, 12px) clamp(10px, 0.9vw, 12px) clamp(10px, 0.9vw, 12px) clamp(16px, 1.6vw, 20px);
+  gap: clamp(10px, 0.9vw, 12px);
 }
 
 /* Hero */
 
-.hero { padding: clamp(24px, 3.1vw, 32px) 0 40px; }
+.hero { padding: 24px 0 40px; }
 
 .hero-inner {
   display: grid;
   grid-template-columns: minmax(240px, 628fr) 1196fr;
-  gap: clamp(16px, 1.7vw, 32px);
+  gap: 24px;
   align-items: stretch;
 }
 
@@ -158,7 +251,7 @@ img { display: block; max-width: 100%; }
 .hero-video-logo {
   position: absolute;
   left: 50%;
-  top: 36%;
+  top: 50%;
   width: 34%;
   transform: translate(-50%, -50%) translateY(8px) scale(0.96);
   opacity: 0;
@@ -179,40 +272,30 @@ img { display: block; max-width: 100%; }
 .hero-side {
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 1.7vw, 32px);
+  gap: 24px;
   min-width: 0;
 }
 
 .hero-card {
-  flex: 1.9 1 0;
+  flex: 0 0 auto;
   background: var(--surface);
   border-radius: var(--radius-card);
   display: flex;
   align-items: center;
-  padding-left: clamp(24px, 4.2vw, 80px);
-  padding-right: clamp(24px, 2vw, 40px);
+  padding: 24px;
 }
 
 .hero-card-inner {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(20px, 2.1vw, 40px);
-  padding: clamp(24px, 2vw, 0px) 0;
+  gap: 24px;
 }
 
 .hero-heading {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.hero-heading h1 {
-  margin: 0;
-  font-weight: 600;
-  font-size: clamp(30px, 3.65vw, 70px);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
 }
 
 .hero-heading h1 .accent { color: var(--accent); }
@@ -224,18 +307,116 @@ img { display: block; max-width: 100%; }
   color: var(--ink);
 }
 
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+/* Tiles row — three clickable service plates, ported from the Figma
+   redesign; border lights up accent-blue on hover/focus. */
+
+.tiles-row {
+  display: flex;
+  flex: 1 1 0;
+  gap: 24px;
+}
+
+.tile-card {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  padding: 24px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease,
+    opacity 0.6s ease,
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tile-card.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tile-card:hover,
+.tile-card:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  background: #f4f8ff;
+  box-shadow: 0 16px 32px rgba(60, 131, 246, 0.16);
+}
+
+.tile-card.is-revealed:hover,
+.tile-card.is-revealed:focus-visible {
+  transform: translateY(-4px);
+}
+
+.tile-arrow {
+  width: clamp(36px, 4vw, 56px);
+  height: auto;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tile-card:hover .tile-arrow,
+.tile-card:focus-visible .tile-arrow {
+  transform: translate(4px, -4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-card {
+    opacity: 1;
+    transform: none;
+    transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+  }
+  .tile-card.is-revealed:hover,
+  .tile-card.is-revealed:focus-visible { transform: none; }
+  .tile-arrow { transition: none; }
+  .tile-card:hover .tile-arrow,
+  .tile-card:focus-visible .tile-arrow { transform: none; }
+}
+
+.tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tile-title { color: var(--accent); }
+
+.tile-desc {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
 /* Trust card — logo marquee (ported from Setl Tech), nested in the
    hero's right column below the headline card rather than full-width */
 
 .trust-card {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   background: var(--surface);
   border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(16px, 2vw, 28px);
-  padding: clamp(20px, 2.5vw, 36px) clamp(24px, 4.2vw, 80px);
+  gap: 24px;
+  padding: 36px;
 }
 
 .trust-label {
@@ -266,7 +447,7 @@ img { display: block; max-width: 100%; }
 }
 
 .trust-inner img {
-  height: clamp(32px, 3.4vw, 48px);
+  height: clamp(27px, 2.55vw, 36px);
   width: auto;
   max-width: none;
   object-fit: contain;
@@ -274,6 +455,143 @@ img { display: block; max-width: 100%; }
   opacity: 0.55;
   mix-blend-mode: multiply;
   pointer-events: none;
+}
+
+/* Services section — three rows (Тендеры / Управление строительством /
+   Документация), heading on the left, a cluster of service tiles on
+   the right sized like the hero's category tiles and laid out two
+   rows deep. Motif borrowed from onewhale.io's flying-asset-card
+   block — tiles fly in from the left — but one-shot on scroll-into-
+   view instead of tied to scroll position, and with no counter. Sits
+   below the orbit/stack sections on purpose: those are the pitch,
+   this is the directory, and the hero tiles already give a shortcut
+   straight here via anchor links. */
+
+.services-section {
+  padding: clamp(24px, 3.1vw, 32px) 0;
+}
+
+.services-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 1.7fr;
+  gap: clamp(24px, 3vw, 48px);
+  align-items: center;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: clamp(28px, 3.5vw, 48px);
+}
+
+.services-row + .services-row {
+  margin-top: 24px;
+}
+
+.services-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.services-heading h2 { margin: 0; }
+
+.services-heading p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 42ch;
+}
+
+.services-tiles {
+  display: grid;
+  grid-template-rows: repeat(2, minmax(200px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  gap: 24px;
+}
+
+.service-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--radius-card);
+  border: 1px solid transparent;
+  background: var(--bg);
+  text-align: left;
+  opacity: 0;
+  transform: translateX(-48px);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease,
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.service-tile.is-revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.service-tile:hover,
+.service-tile:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  background: #f4f8ff;
+  box-shadow: 0 16px 32px rgba(60, 131, 246, 0.16);
+}
+
+.service-tile.is-revealed:hover,
+.service-tile.is-revealed:focus-visible {
+  transform: translateY(-4px);
+}
+
+.service-icon {
+  width: clamp(40px, 4vw, 56px);
+  height: clamp(40px, 4vw, 56px);
+  object-fit: contain;
+}
+
+.service-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.service-title {
+  margin: 0;
+  font-size: clamp(17px, 1.3vw, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--accent);
+}
+
+.service-desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-tile {
+    opacity: 1;
+    transform: none;
+    transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+  }
+  .service-tile.is-revealed:hover,
+  .service-tile.is-revealed:focus-visible { transform: none; }
+}
+
+@media (max-width: 900px) {
+  .services-row { grid-template-columns: 1fr; }
+  .services-tiles {
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
 }
 
 /* Orbit section */
@@ -505,10 +823,6 @@ img { display: block; max-width: 100%; }
 
 .stack-text h3 {
   margin: 0 0 10px;
-  font-size: clamp(22px, 2.3vw, 32px);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
 }
 
 .stack-text p {
@@ -572,8 +886,6 @@ img { display: block; max-width: 100%; }
     grid-template-columns: 1fr;
   }
   .hero-frame { max-width: 420px; margin: 0 auto; }
-  .hero-card { padding: 0 24px; }
-  .hero-card-inner { padding: 28px 0; }
   .header-phone { display: none; }
 }
 
@@ -583,6 +895,10 @@ img { display: block; max-width: 100%; }
   .orbit-side,
   .stack-side {
     display: none;
+  }
+
+  .tiles-row {
+    flex-direction: column;
   }
 }
 

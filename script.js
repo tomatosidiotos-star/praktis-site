@@ -113,102 +113,6 @@
   render(getProgress());
 })();
 
-/* Pixel-dissolve button hover, ported from Setl Tech's .btn-primary
-   component: a canvas overlay divided into a staggered 8x2 grid of
-   cells fades in on hover instead of a plain background crossfade.
-   Colors: dissolves to near-black (unchanged from the source), and
-   the icon chip flips from black to our accent blue (was red there). */
-(function () {
-  const COLS = 8, ROWS = 2;
-
-  function buildGrid(cvs) {
-    const w = cvs.width, h = cvs.height;
-    const cells = [];
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const x = Math.round((c * w) / COLS);
-        const y = Math.round((r * h) / ROWS);
-        const x2 = Math.round(((c + 1) * w) / COLS);
-        const y2 = Math.round(((r + 1) * h) / ROWS);
-        cells.push({ x, y, w: x2 - x, h: y2 - y, d: Math.random() });
-      }
-    }
-    return cells;
-  }
-
-  function ease(t) {
-    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-  }
-
-  function initDissolveBtn(btn, opts) {
-    const { fillRGB, accent, duration = 420 } = opts;
-    const icon = btn.querySelector(".btn-icon");
-    let cvs, ctx, cells, raf;
-
-    function build() {
-      const w = btn.offsetWidth, h = btn.offsetHeight;
-      if (!cvs) {
-        cvs = document.createElement("canvas");
-        cvs.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:1;";
-        btn.prepend(cvs);
-      }
-      cvs.width = w;
-      cvs.height = h;
-      ctx = cvs.getContext("2d");
-      cells = buildGrid(cvs);
-    }
-
-    function play(enter) {
-      if (!cvs || cvs.width !== btn.offsetWidth) build();
-      cancelAnimationFrame(raf);
-      const t0 = performance.now();
-      let midFired = false;
-
-      function step(now) {
-        const p = Math.min((now - t0) / duration, 1);
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-        cells.forEach((cell) => {
-          const lp = Math.max(0, Math.min(1, (p - cell.d * 0.45) / 0.55));
-          const a = enter ? ease(lp) : 1 - ease(lp);
-          if (a > 0.01) {
-            ctx.fillStyle = `rgba(${fillRGB[0]},${fillRGB[1]},${fillRGB[2]},${a})`;
-            ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
-          }
-        });
-
-        if (!midFired && (enter ? p : 1 - p) > 0.5) {
-          midFired = true;
-          if (icon) icon.style.background = enter ? accent : "#16213d";
-        }
-
-        if (p < 1) {
-          raf = requestAnimationFrame(step);
-        } else {
-          if (enter) {
-            ctx.fillStyle = `rgb(${fillRGB[0]},${fillRGB[1]},${fillRGB[2]})`;
-            ctx.fillRect(0, 0, cvs.width, cvs.height);
-          } else {
-            ctx.clearRect(0, 0, cvs.width, cvs.height);
-          }
-        }
-      }
-
-      raf = requestAnimationFrame(step);
-    }
-
-    build();
-    btn.addEventListener("mouseenter", () => play(true));
-    btn.addEventListener("mouseleave", () => play(false));
-    new ResizeObserver(build).observe(btn);
-  }
-
-  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#3c83f6";
-  document.querySelectorAll(".btn-accent").forEach((btn) => {
-    initDissolveBtn(btn, { fillRGB: [22, 33, 61], accent });
-  });
-})();
-
 /* Draggable auto-scroll logo marquee, ported from Setl Tech. No-ops
    safely if the trust strip isn't on the page. */
 (function () {
@@ -338,6 +242,62 @@
   window.addEventListener("resize", onResize);
   measure();
   render(getProgress());
+})();
+
+/* Tiles row: reveal once with a short stagger the first time it scrolls
+   into view, instead of always sitting there static — a small echo of
+   the orbit/stack sections' motion without needing their scroll-driven
+   height. Fires once, then disconnects. */
+(function () {
+  const row = document.querySelector(".tiles-row");
+  const cards = row ? Array.from(row.querySelectorAll(".tile-card")) : [];
+  if (!row || !cards.length) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (!entries[0].isIntersecting) return;
+      cards.forEach((card, i) => {
+        setTimeout(() => card.classList.add("is-revealed"), i * 90);
+      });
+      observer.disconnect();
+    },
+    { threshold: 0.35 }
+  );
+
+  observer.observe(row);
+})();
+
+/* Services section: each row's tiles fly in from the left with a short
+   stagger the first time that row scrolls into view — same one-shot
+   IntersectionObserver approach as the hero tiles, run per row so each
+   category reveals independently as you scroll down to it. */
+(function () {
+  const rows = Array.from(document.querySelectorAll(".services-row"));
+  if (!rows.length) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return;
+
+  rows.forEach((row) => {
+    const tiles = Array.from(row.querySelectorAll(".service-tile"));
+    if (!tiles.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        tiles.forEach((tile, i) => {
+          setTimeout(() => tile.classList.add("is-revealed"), i * 80);
+        });
+        observer.disconnect();
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(row);
+  });
 })();
 
 /* Hero video plays once and holds on its final sky shot — no loop.
