@@ -596,109 +596,397 @@ img { display: block; max-width: 100%; }
 
 /* Orbit section */
 
-.orbit-section {
-  position: relative;
-  height: 400vh;
-  background: #16213d;
-  margin-top: clamp(24px, 3.1vw, 32px);
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
+/* Construction-cycle path: a linear, one-way version of the Setl loop
+   diagram — 6 stage nodes on a straight line, every stage's services
+   stacked above it (2 per row). Desktop pins the section and pans the
+   whole track sideways as you scroll down (the scroll budget is
+   measured from the track's real rendered width in script.js, not a
+   fixed vh, since it depends on how many service tiles a stage
+   lists). Narrow screens and reduced-motion skip the pin and just let
+   the track scroll natively — scroll-jacked horizontal panning reads
+   as broken on touch. The line itself grows from stage 1 onward as
+   you scroll; each node's connector lines then draw in and its cards
+   pop in one by one once the growing line reaches it — all driven off
+   the same 0..1 progress value as the pan, computed in script.js. */
+
+.path-section {
+  padding: clamp(24px, 3.1vw, 32px) 0;
+  background: var(--bg);
 }
 
-.orbit-sticky {
+/* On the pinned desktop layout, the sticky box takes a moment to
+   scroll fully out of view even after it un-pins, and this bottom
+   padding would show through as a stray strip of --bg right in the
+   middle of the white circle → white block 3 handoff. Not an issue on
+   the static mobile layout, where it's ordinary breathing room before
+   the next section, so it's only zeroed out here. */
+@media (min-width: 901px) {
+  .path-section {
+    padding-bottom: 0;
+  }
+}
+
+/* Standalone intro heading, separate from the pinned diagram below it —
+   its own scroll moment between the hero and the path section, not
+   glued to the top of the pin. Heading and subtitle fade/rise in with
+   a short stagger the first time it scrolls into view (script.js). */
+.path-head {
+  margin: clamp(96px, 12.4vw, 128px) auto clamp(24px, 3vw, 32px);
+  max-width: 560px;
+  text-align: center;
+}
+
+.path-head h2 {
+  font-size: clamp(28px, 2.6vw, 40px);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.path-head p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease 0.15s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+}
+
+.path-head.is-revealed h2,
+.path-head.is-revealed p {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.path-sticky {
   position: sticky;
   top: 0;
-  height: 100vh;
+}
+
+.path-viewport {
+  display: flex;
+  align-items: center;
   overflow: hidden;
+  height: auto;
+  /* At least a full viewport tall, so the diagram sits centered in the
+     pinned screen instead of hugging the top with dead space below —
+     auto still lets it grow past this if content ever needs more. */
+  min-height: 100vh;
+}
+
+.path-track {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  gap: clamp(64px, 7.5vw, 128px);
+  padding: 0 clamp(24px, 6vw, 120px);
+  will-change: transform;
+}
+
+.path-line {
+  position: absolute;
+  top: 0;
+  height: 2px;
+  width: 0;
+  background: var(--accent);
+  z-index: 0;
+}
+
+.path-connectors {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.path-stage {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 140px;
+}
+
+/* Invisible spacer the width of stage 6, appended after it — so the
+   frozen end-of-pan frame (script.js) leaves it a bit of breathing
+   room on the right instead of sitting flush against the edge. */
+.path-spacer {
+  flex: 0 0 auto;
+}
+
+.path-branch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  max-width: 400px;
+  padding-bottom: 140px;
+}
+
+.path-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Half the length of the connector run above the node (80px, see
+   AIR_SHELF in script.js) — a plain descender from the dot down to
+   the stage name, no corners or endpoint dot needed since it runs
+   straight into the label. */
+.path-node-stem {
+  width: 2px;
+  height: 80px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.path-node.is-revealed .path-node-stem {
+  opacity: 1;
+}
+
+.path-node-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 8px 20px rgba(60, 131, 246, 0.28);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.path-node.is-revealed .path-node-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.path-node-label {
+  font-size: clamp(17px, 1.4vw, 21px);
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.path-node-label.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.path-service {
+  width: clamp(150px, 13vw, 190px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid transparent;
+  opacity: 0;
+  transform: translateY(16px);
+  /* Not revealed yet = not really there — otherwise its hover state
+     and popover trigger are reachable before it's visible. */
+  pointer-events: none;
+  transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.path-service.is-revealed { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.path-service:not(.path-service-video):hover,
+.path-service:not(.path-service-video):focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  background: #f4f8ff;
+  box-shadow: 0 16px 32px rgba(60, 131, 246, 0.16);
+}
+
+.path-service.is-revealed:not(.path-service-video):hover,
+.path-service.is-revealed:not(.path-service-video):focus-visible {
+  transform: translateY(-6px);
+}
+
+.path-service-icon {
+  width: clamp(30px, 2.6vw, 38px);
+  height: clamp(30px, 2.6vw, 38px);
+  object-fit: contain;
+}
+
+.path-service-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.3;
+}
+
+/* Fixed to exactly 4 lines (12.5px * 1.45 line-height) regardless of
+   actual copy length, so every card in a row lands the same height. */
+.path-service-desc {
+  margin: 0;
+  height: calc(12.5px * 1.45 * 4);
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* Hover popover: a single shared element, repositioned and refilled
+   from whichever card is hovered (script.js). Lives outside
+   .path-track on purpose — that element is transformed for the pan,
+   and a transformed ancestor would turn this popover's `position:
+   fixed` into something scoped to that ancestor instead of the real
+   viewport. */
+.path-popover {
+  position: fixed;
+  z-index: 60;
+  width: clamp(300px, 26vw, 360px);
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: 0 32px 64px rgba(15, 23, 42, 0.22), 0 8px 20px rgba(15, 23, 42, 0.1);
+  opacity: 0;
+  transform: scale(0.92) translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.path-popover.is-visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.path-popover-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.path-popover-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+.path-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.path-popover-item.is-shown {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.path-popover-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.orbit-scene {
-  position: relative;
-  width: 100%;
-  height: 100%;
+.path-popover-check svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 17;
+  stroke-dashoffset: 17;
+  transition: stroke-dashoffset 0.3s ease 0.05s;
 }
 
-.orbit-side {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.5);
-  z-index: 4;
+.path-popover-item.is-shown .path-popover-check svg {
+  stroke-dashoffset: 0;
 }
 
-.orbit-side-left {
-  left: clamp(16px, 3vw, 48px);
-  text-align: left;
+.path-popover-item-text {
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
 }
 
-.orbit-side-right {
-  right: clamp(16px, 3vw, 48px);
-  text-align: right;
+@media (prefers-reduced-motion: reduce) {
+  .path-popover { transition: opacity 0.2s ease; transform: none !important; }
+  .path-popover-item { transition: opacity 0.2s ease; transform: none !important; }
+  .path-popover-check svg { transition: none; }
 }
 
-.orbit-card {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 172px;
-  height: 172px;
-  margin: -86px 0 0 -86px;
-  border-radius: 36px;
+/* Hover-triggered, so it has no useful behavior on touch. */
+@media (hover: none) {
+  .path-popover { display: none; }
+}
+
+/* Stage 6's card is the finished building itself, in the same
+   portrait style as the stack section's video card — bigger than a
+   regular service tile, but a smaller echo of that one. */
+.path-service-video {
+  width: clamp(180px, 16vw, 240px);
+  aspect-ratio: 4 / 5;
+  padding: 0;
   overflow: hidden;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, var(--shadow-o, 0.35));
-  will-change: transform, opacity;
-  backface-visibility: hidden;
 }
 
-.orbit-card img {
+.path-service-video-el {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.orbit-item {
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(0.7);
-}
-
-.orbit-headline {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) translateY(16px);
-  margin: 0;
-  width: min(45vw, 450px);
-  text-align: center;
-  color: #fff;
-  font-weight: 600;
-  font-size: clamp(24px, 3.6vw, 52px);
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  opacity: 0;
-  z-index: 5;
+@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .path-sticky { position: static; }
+  .path-viewport {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .path-track { padding: 0 20px; gap: 40px; }
+  .path-stage { scroll-snap-align: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .orbit-section { height: auto; }
-  .orbit-sticky { position: relative; height: auto; padding: 96px 0; }
-  .orbit-item {
-    position: static;
-    display: inline-block;
-    margin: 8px;
-    opacity: 1;
-    transform: none;
-  }
-  .orbit-scene { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0; }
-  .orbit-headline { position: static; transform: none; opacity: 1; margin-top: 32px; }
+  .path-service { opacity: 1; transform: none; }
+  .path-service.is-revealed:hover,
+  .path-service.is-revealed:focus-visible { transform: none; }
+  .path-node-dot { opacity: 1; transform: none; }
+  .path-node-stem { opacity: 1; }
+  .path-node-label { opacity: 1; transform: none; }
+  .path-head h2,
+  .path-head p { opacity: 1; transform: none; }
 }
 
 /* Stack section — cards queue below the sticky viewport and slide up
@@ -892,7 +1180,6 @@ img { display: block; max-width: 100%; }
 @media (max-width: 640px) {
   /* Below this width the card floors out at its own min-width, so the
      side captions no longer have room and start overlapping it. */
-  .orbit-side,
   .stack-side {
     display: none;
   }
