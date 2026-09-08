@@ -22,7 +22,9 @@
 })();
 
 /* Construction-cycle path (block 2): 6 stage nodes on a straight line,
-   every stage's services stacked above it (2 per row). Desktop pins
+   every stage's services lined up above it — one row on desktop,
+   wrapping 2-per-row on narrow screens where the pin is skipped
+   anyway. Desktop pins
    the section and pans the track sideways as you scroll — same
    sticky+progress technique as the orbit/stack sections used to run,
    but the scroll budget is measured from the track's actual rendered
@@ -53,6 +55,10 @@
   if (!section || !sticky || !viewport || !track || !svg || !lineEl || !stageEls.length) return;
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Declared up here (not just where isDesktop is set up below) so
+  // buildConnectors can read mq.matches even on the reduced-motion
+  // path, which lays everything out before that point further down.
+  const mq = window.matchMedia("(min-width: 901px)");
 
   const stages = stageEls.map((el) => ({
     el,
@@ -127,7 +133,43 @@
   // way, in a small dot.
   function buildConnectors(stage, trackRect) {
     const tiles = stage.branch ? Array.from(stage.branch.querySelectorAll(".path-service")) : [];
-    const COLS = 2;
+
+    // Mobile stages with more than one card (5, 6) scroll their own
+    // inner carousel (styles.css) instead of wrapping 2-per-row — only
+    // one card is actually in view at a time, so only one connector
+    // line is drawn, to whichever card is currently centered in that
+    // scroller. Kept in sync by the branch scroll listener below,
+    // which re-runs this on every settle, not just on layout()/resize.
+    if (!mq.matches && tiles.length > 1) {
+      const branchRect = stage.branch.getBoundingClientRect();
+      const branchMidX = branchRect.left + branchRect.width / 2;
+      let active = tiles[0];
+      let bestDist = Infinity;
+      tiles.forEach((tile) => {
+        const r = tile.getBoundingClientRect();
+        const dist = Math.abs(r.left + r.width / 2 - branchMidX);
+        if (dist < bestDist) {
+          bestDist = dist;
+          active = tile;
+        }
+      });
+      const tRect = active.getBoundingClientRect();
+      const tx = tRect.left + tRect.width / 2 - trackRect.left;
+      const ty = tRect.bottom - trackRect.top;
+      const shelfY = stage.ny - AIR_SHELF;
+      return [{
+        tile: active,
+        d: roundedPath([[stage.nx, stage.ny], [stage.nx, shelfY], [tx, shelfY], [tx, ty]], 12),
+        mx: tx,
+        my: ty,
+      }];
+    }
+
+    // Must match .path-branch's current layout in styles.css: desktop
+    // lays every stage out in one row (each tile its own column, no
+    // stacking); mobile only reaches here for single-card stages,
+    // which need no columns at all.
+    const COLS = mq.matches ? tiles.length || 1 : 2;
     const byCol = [];
     tiles.forEach((tile, i) => {
       const c = i % COLS;
@@ -180,9 +222,13 @@
   // Hex mirrors --accent in styles.css: var() support inside
   // freshly-created SVG nodes is inconsistent, so it stays in sync by
   // hand. Every line and every endpoint dot share the same color.
+  // Just the per-tile connector lines — the node's own dot is added
+  // separately by layout() below, once per stage, since (unlike these)
+  // it never needs to move when a mobile branch's inner carousel
+  // settles on a different active tile.
   function buildStageSteps(stage, trackRect) {
     const items = buildConnectors(stage, trackRect);
-    const steps = items.map((item) => {
+    return items.map((item) => {
       const path = svgEl("path", { d: item.d, fill: "none", stroke: "#3c83f6", "stroke-width": "1.5" });
       svg.appendChild(path);
       const len = path.getTotalLength();
@@ -195,9 +241,6 @@
 
       return { path, marker, tile: item.tile };
     });
-
-    svg.appendChild(svgEl("circle", { cx: stage.nx, cy: stage.ny, r: "4", fill: "#3c83f6" }));
-    return steps;
   }
 
   // Rebuilds node positions and every connector from the actual
@@ -234,6 +277,7 @@
     stages.forEach((stage) => {
       stage.nodeT = lineRangeX > 0 ? (stage.nx - lineFirstX) / lineRangeX : 0;
       stage.steps = buildStageSteps(stage, trackRect);
+      svg.appendChild(svgEl("circle", { cx: stage.nx, cy: stage.ny, r: "4", fill: "#3c83f6" }));
     });
   }
 
@@ -248,11 +292,11 @@
   function animateStage(stage) {
     stage.node.classList.add("is-revealed");
 
-    const LABEL_DELAY = 200;
-    const LINES_START = 420;
-    const STEP_STAGGER = 90;
-    const SEG_DUR = 420;
-    const TILE_OFFSET = 200;
+    const LABEL_DELAY = 130;
+    const LINES_START = 280;
+    const STEP_STAGGER = 55;
+    const SEG_DUR = 280;
+    const TILE_OFFSET = 130;
 
     if (stage.label) {
       setTimeout(() => stage.label.classList.add("is-revealed"), LABEL_DELAY);
@@ -268,6 +312,17 @@
       }, delay);
       setTimeout(() => step.tile.classList.add("is-revealed"), delay + TILE_OFFSET);
     });
+
+    // A mobile multi-card stage only ever gets one connector (above,
+    // to whichever card is currently active) — its other cards, sitting
+    // off to the side in that branch's own carousel, still need to
+    // reveal now rather than staying invisible until swiped to.
+    if (stage.branch) {
+      const revealed = new Set(stage.steps.map((step) => step.tile));
+      stage.branch.querySelectorAll(".path-service").forEach((tile) => {
+        if (!revealed.has(tile)) tile.classList.add("is-revealed");
+      });
+    }
   }
 
   function checkTriggers(p) {
@@ -278,6 +333,33 @@
       }
     });
   }
+
+  // Mobile multi-card stages (5, 6) scroll their own inner carousel
+  // (styles.css), completely independent of the outer stage-to-stage
+  // scroll everything else above reacts to — so its single connector
+  // needs its own resync on settle, not just on the global
+  // layout()/resize pass. Runs regardless of reduced motion: this is
+  // reflecting where the user actually scrolled to, not an animation.
+  stages.forEach((stage) => {
+    if (!stage.branch || stage.branch.querySelectorAll(".path-service").length <= 1) return;
+    let settleTimer = null;
+    stage.branch.addEventListener(
+      "scroll",
+      () => {
+        if (mq.matches) return;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+          const trackRect = track.getBoundingClientRect();
+          stage.steps.forEach((step) => {
+            step.path.remove();
+            step.marker.remove();
+          });
+          stage.steps = buildStageSteps(stage, trackRect);
+        }, 120);
+      },
+      { passive: true }
+    );
+  });
 
   if (reduceMotion) {
     stages.forEach((stage) => {
@@ -300,15 +382,14 @@
     return;
   }
 
-  const mq = window.matchMedia("(min-width: 901px)");
   let isDesktop = mq.matches;
   // Pan distance alone — where translateX stops changing and progress
   // (line growth, stage triggers) caps at 1.
   let maxShiftCore = 0;
   // Pan distance plus a frozen hold afterward (desktop only): the pin
   // stays put with the finished diagram fully in frame for one more
-  // viewport-height of scroll, rather than releasing right as stage 6
-  // finishes and letting the next section peek in behind an animation
+  // viewport-height of scroll, rather than releasing right as the last
+  // stage finishes and letting the next section peek in behind an animation
   // that's still mid-reveal. Nothing pans during the hold — the only
   // motion left is the next section climbing up to cover it, which is
   // what actually reads as "something is happening" while it lasts.
@@ -432,154 +513,53 @@
   armObserver.observe(section);
 })();
 
-/* Service-card hover popover (block 2): hovering a card shows its
-   checklist in a single shared panel, positioned from the card's live
-   screen rect and faded/scaled in with its items staggering one at a
-   time. Fixed-position and mouse-only by design — desktop only, since
-   there's no hover on touch and the diagram falls back to native
-   scroll there anyway.
-
-   Driven by a single global mousemove + elementsFromPoint hit-test
-   (rAF-throttled) rather than per-tile mouseenter/mouseleave: the
-   popover is bigger than a card and deliberately overlaps its
-   neighbors, so a naive enter/leave chain breaks as soon as it's
-   sitting on top of a tile the user is trying to reach next — the
-   popover would intercept the pointer and that tile would never see
-   its own mouseenter. Checking the *whole* stack at the cursor instead
-   means a covered tile still counts as hovered. */
+/* Touch equivalent of the desc/checklist hover crossfade above
+   (styles.css): there's no hover to reach it on touch, so a tap does
+   the same job, as an accordion — opening one card closes any other
+   open card in the same stage's branch (unrelated stages are left
+   alone). The .is-open class this toggles is read only under a
+   (hover: none) media query, so this listener is harmless to attach
+   unconditionally, mouse users included: nothing visible reacts to it
+   there since that crossfade already runs on real :hover. Adding
+   tabindex here also makes these cards keyboard-reachable for the
+   first time, which is what the existing (until now dead)
+   :focus-visible crossfade rule was already written for. */
 (function () {
-  const popover = document.getElementById("pathPopover");
-  const tiles = Array.from(document.querySelectorAll(".path-service:not(.path-service-video)"));
-  if (!popover || !tiles.length) return;
+  const cards = Array.from(document.querySelectorAll(".path-service:not(.path-service-video)"));
+  if (!cards.length) return;
 
-  const hoverCapable = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (!hoverCapable) return;
+  cards.forEach((card, i) => {
+    const points = card.querySelector(".path-service-points");
+    if (!points) return;
+    if (!points.id) points.id = `pathServicePoints${i}`;
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-expanded", "false");
+    card.setAttribute("aria-controls", points.id);
 
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function toggle() {
+      const opening = !card.classList.contains("is-open");
+      const branch = card.closest(".path-branch");
+      if (branch) {
+        branch.querySelectorAll(".path-service.is-open").forEach((other) => {
+          if (other !== card) {
+            other.classList.remove("is-open");
+            other.setAttribute("aria-expanded", "false");
+          }
+        });
+      }
+      card.classList.toggle("is-open", opening);
+      card.setAttribute("aria-expanded", String(opening));
+    }
 
-  const titleEl = popover.querySelector(".path-popover-title");
-  const listEl = popover.querySelector(".path-popover-list");
-  const SWITCH_DELAY = 180; // matches the opacity transition in styles.css
-
-  let activeTile = null;
-  let hideTimer = null;
-  let switchTimer = null;
-  let itemTimers = [];
-
-  function clearItemTimers() {
-    itemTimers.forEach(clearTimeout);
-    itemTimers = [];
-  }
-
-  function position(tile) {
-    const r = tile.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const margin = 16;
-    const pw = popover.offsetWidth;
-    const ph = popover.offsetHeight;
-    const left = Math.min(Math.max(margin, cx - pw / 2), window.innerWidth - pw - margin);
-    const top = Math.min(Math.max(margin, cy - ph / 2), window.innerHeight - ph - margin);
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-  }
-
-  // Populates, positions and fades the popover in for `tile`. Assumes
-  // it's currently hidden — callers that might catch it still visible
-  // over a different tile go through show(), which fades it out first.
-  function reveal(tile) {
-    activeTile = tile;
-
-    const title = tile.querySelector(".path-service-title");
-    const points = Array.from(tile.querySelectorAll(".path-service-points li")).map((li) => li.textContent);
-
-    titleEl.textContent = title ? title.textContent : "";
-    listEl.innerHTML = points
-      .map(
-        (text) =>
-          '<li class="path-popover-item"><span class="path-popover-check"><svg viewBox="0 0 16 16"><polyline points="3,8.5 6.5,12 13,4"/></svg></span><span class="path-popover-item-text">' +
-          text +
-          "</span></li>"
-      )
-      .join("");
-
-    position(tile);
-    popover.classList.add("is-visible");
-
-    Array.from(listEl.querySelectorAll(".path-popover-item")).forEach((item, i) => {
-      const delay = reduceMotion ? 0 : 90 + i * 70;
-      itemTimers.push(setTimeout(() => item.classList.add("is-shown"), delay));
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle();
+      }
     });
-  }
-
-  // Switching straight to a new position/content while still visible
-  // reads as a snap, not a move — there's no transition on left/top.
-  // So when the popover is already open on a different tile, fade it
-  // out first and only reveal the new one once it's actually gone.
-  function show(tile) {
-    if (activeTile === tile) {
-      clearTimeout(hideTimer);
-      return;
-    }
-    clearTimeout(hideTimer);
-    clearTimeout(switchTimer);
-    clearItemTimers();
-
-    if (activeTile) {
-      popover.classList.remove("is-visible");
-      switchTimer = setTimeout(() => reveal(tile), reduceMotion ? 0 : SWITCH_DELAY);
-    } else {
-      reveal(tile);
-    }
-  }
-
-  function hide() {
-    popover.classList.remove("is-visible");
-    clearItemTimers();
-    clearTimeout(switchTimer);
-    activeTile = null;
-  }
-
-  function scheduleHide() {
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(hide, 150);
-  }
-
-  const tileSet = new Set(tiles);
-  let pendingX = 0;
-  let pendingY = 0;
-  let rafId = null;
-
-  function processPoint() {
-    rafId = null;
-    const stack = document.elementsFromPoint(pendingX, pendingY);
-    const hitTile = stack.find((el) => tileSet.has(el));
-
-    if (hitTile) {
-      show(hitTile);
-      return;
-    }
-    if (stack.includes(popover)) {
-      clearTimeout(hideTimer);
-      return;
-    }
-    if (activeTile) scheduleHide();
-  }
-
-  document.addEventListener(
-    "mousemove",
-    (e) => {
-      pendingX = e.clientX;
-      pendingY = e.clientY;
-      if (rafId == null) rafId = requestAnimationFrame(processPoint);
-    },
-    { passive: true }
-  );
-
-  // The pinned diagram pans on scroll, so a card's screen position
-  // (and the popover pinned to it) would go stale mid-scroll — simpler
-  // to just dismiss it than to track the pan every frame.
-  window.addEventListener("scroll", hide, { passive: true, capture: true });
+  });
 })();
 
 /* Draggable auto-scroll logo marquee, ported from Setl Tech. No-ops
@@ -816,4 +796,408 @@
   }, { threshold: 0.4 });
 
   observer.observe(heroSection);
+})();
+
+/* Stats section: sticky "digit belt" between hero and the path diagram.
+   .stats-static (a plain grid, already real content) is what's in the
+   markup and what mobile/reduced-motion users see untouched. Here, on
+   desktop with motion allowed, we build an animated version from that
+   same data and swap it in: a small plate shows one crisp active number
+   in a cropped window, while the same number strip — uncropped, very
+   pale — bleeds above/below the plate onto the page background; the
+   panel's title/description move in sync.
+
+   The move is a discrete snap keyed off scroll progress, not a value
+   tied 1:1 to every pixel scrolled: render() only touches the strips
+   when the nearest stat actually changes (crossing the midpoint to the
+   next one), and CSS animates that one jump. Between snaps nothing
+   moves, so a stat's number/text can't be caught half-scrolled the way
+   a continuous transform would. */
+(function () {
+  const section = document.getElementById("statsSection");
+  const staticEl = document.getElementById("statsStatic");
+  const itemsEl = document.getElementById("statsItems");
+  const items = itemsEl ? Array.from(itemsEl.querySelectorAll(".stats-item")) : [];
+  if (!section || !staticEl || items.length < 2) return;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return;
+
+  const data = items.map((li) => ({
+    number: li.querySelector(".stats-item-number").textContent.trim(),
+    title: li.querySelector(".stats-item-title").innerHTML,
+    desc: li.querySelector(".stats-item-desc").innerHTML,
+  }));
+  const N = data.length;
+
+  const pinWrap = document.createElement("div");
+  pinWrap.className = "stats-pin-wrap";
+  pinWrap.innerHTML =
+    '<div class="stats-sticky"><div class="stats-row">' +
+    '<div class="stats-plate"><div class="stats-plate-ghost"></div>' +
+    '<div class="stats-plate-mask"><div class="stats-plate-active"></div></div></div>' +
+    '<div class="stats-panel"><div class="stats-text-window"><div class="stats-text-track"></div></div></div>' +
+    "</div></div>";
+  staticEl.parentElement.insertBefore(pinWrap, staticEl);
+
+  const sticky = pinWrap.querySelector(".stats-sticky");
+  const plate = pinWrap.querySelector(".stats-plate");
+  const ghostStrip = pinWrap.querySelector(".stats-plate-ghost");
+  const maskEl = pinWrap.querySelector(".stats-plate-mask");
+  const activeStrip = pinWrap.querySelector(".stats-plate-active");
+  const textWindow = pinWrap.querySelector(".stats-text-window");
+  const textStrip = pinWrap.querySelector(".stats-text-track");
+
+  data.forEach((d) => {
+    const g = document.createElement("div");
+    g.className = "stats-plate-ghost-item";
+    g.textContent = d.number;
+    ghostStrip.appendChild(g);
+
+    const a = document.createElement("div");
+    a.className = "stats-plate-active-item";
+    a.textContent = d.number;
+    activeStrip.appendChild(a);
+
+    const slot = document.createElement("div");
+    slot.className = "stats-text-slot";
+    slot.innerHTML =
+      '<h3 class="h3 stats-text-title">' + d.title + '</h3><p class="stats-text-desc">' + d.desc + "</p>";
+    textStrip.appendChild(slot);
+  });
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // Mask window covers just over half the plate's height, centered —
+  // enough to read the active number clearly while still leaving the
+  // ghost strip's neighbors peeking outside it top and bottom.
+  const MASK_RATIO = 0.55;
+  let plateSize = 0;
+  let maskHeight = 0;
+  let trackHeight = 0;
+  // -1 so the first render() jumps straight to the right stat with no
+  // walk-through animation (there's no real "previous" card yet).
+  let activeIndex = -1;
+  let targetIndex = 0;
+  let stepTimer = null;
+  // Catch-up step spacing — shorter than the CSS transition itself, so
+  // a fast scroll that lands several stats ahead cascades through the
+  // ones in between instead of holding still and then leaping.
+  const STEP_MS = 260;
+
+  function layout() {
+    activeIndex = -1;
+    clearTimeout(stepTimer);
+    stepTimer = null;
+    plateSize = plate.getBoundingClientRect().width;
+    maskHeight = plateSize * MASK_RATIO;
+
+    Array.from(ghostStrip.children).forEach((el, i) => {
+      el.style.height = `${plateSize}px`;
+      el.style.top = `${i * plateSize}px`;
+    });
+
+    maskEl.style.top = `${(plateSize - maskHeight) / 2}px`;
+    maskEl.style.height = `${maskHeight}px`;
+    Array.from(activeStrip.children).forEach((el, i) => {
+      el.style.height = `${maskHeight}px`;
+      el.style.top = `${i * maskHeight}px`;
+    });
+
+    // All slots share the tallest one's height so the track can be
+    // stacked at fixed offsets instead of measuring during scroll.
+    trackHeight = 0;
+    Array.from(textStrip.children).forEach((el) => {
+      trackHeight = Math.max(trackHeight, el.getBoundingClientRect().height);
+    });
+    textWindow.style.height = `${trackHeight}px`;
+    Array.from(textStrip.children).forEach((el, i) => {
+      el.style.top = `${i * trackHeight}px`;
+    });
+
+    // Short, snappy scroll budget — this is a quick content swap, not a
+    // cinematic multi-stage reveal like the path diagram.
+    const scrollBudget = (N - 1) * window.innerHeight * 0.42;
+    pinWrap.style.height = `${window.innerHeight + scrollBudget}px`;
+  }
+
+  function applyIndex(idx) {
+    activeIndex = idx;
+    ghostStrip.style.transform = `translateY(${-idx * plateSize}px)`;
+    activeStrip.style.transform = `translateY(${-idx * maskHeight}px)`;
+    textStrip.style.transform = `translateY(${-idx * trackHeight}px)`;
+  }
+
+  // Advances activeIndex by exactly one step toward whatever
+  // targetIndex currently is (re-read fresh each call, so a change in
+  // scroll direction mid-catch-up just bends the walk the other way).
+  // Chains itself via setTimeout until the two meet.
+  function stepToward() {
+    stepTimer = null;
+    if (activeIndex === targetIndex) return;
+    applyIndex(activeIndex + (targetIndex > activeIndex ? 1 : -1));
+    if (activeIndex !== targetIndex) {
+      stepTimer = setTimeout(stepToward, STEP_MS);
+    }
+  }
+
+  function render() {
+    const rect = pinWrap.getBoundingClientRect();
+    const total = pinWrap.offsetHeight - window.innerHeight;
+    const progress = total > 0 ? clamp(-rect.top / total, 0, 1) : 0;
+    // Nearest stat to the current scroll position — changes exactly at
+    // the midpoint between two stats, not gradually across the range.
+    targetIndex = clamp(Math.round(progress * (N - 1)), 0, N - 1);
+
+    if (activeIndex === -1) {
+      applyIndex(targetIndex);
+      return;
+    }
+    // A fast scroll can land two or more stats ahead of what's on
+    // screen between one animation frame and the next. Rather than
+    // jump straight to targetIndex (skipping whatever sat in between),
+    // take one step now and let stepToward() chain through the rest —
+    // every stat still gets its moment, just quickly.
+    if (targetIndex !== activeIndex && !stepTimer) {
+      applyIndex(activeIndex + (targetIndex > activeIndex ? 1 : -1));
+      if (activeIndex !== targetIndex) {
+        stepTimer = setTimeout(stepToward, STEP_MS);
+      }
+    }
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        render();
+        ticking = false;
+      });
+    }
+  }
+
+  const mq = window.matchMedia("(min-width: 901px)");
+  function applyMode() {
+    if (mq.matches) {
+      staticEl.style.display = "none";
+      pinWrap.style.display = "";
+      layout();
+      render();
+    } else {
+      staticEl.style.display = "";
+      pinWrap.style.display = "none";
+      pinWrap.style.height = "";
+    }
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", applyMode);
+  applyMode();
+
+  // Inter swaps in after first layout and reflows the number/text
+  // widths — re-measure once it's actually ready.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (mq.matches) {
+        layout();
+        render();
+      }
+    });
+  }
+})();
+
+/* Join modal ("Присоединиться" in the hero): a plain centered dialog,
+   not positioned off a button rect like the popover removed from the
+   path diagram — backdrop + card fade/scale in, then the title, intro,
+   each field and the submit button stagger in on their own delays
+   (styles.css) using the same curve as the rest of the page. No
+   backend yet: a valid submit just swaps to the success state and
+   logs what would have been sent. */
+(function () {
+  const trigger = document.getElementById("joinTrigger");
+  const modal = document.getElementById("joinModal");
+  if (!trigger || !modal) return;
+
+  const dialog = modal.querySelector(".join-modal-dialog");
+  const form = document.getElementById("joinForm");
+  const formState = document.getElementById("joinFormState");
+  const successState = document.getElementById("joinSuccess");
+  const errorEl = document.getElementById("joinFormError");
+  const nameInput = document.getElementById("joinName");
+  const emailInput = document.getElementById("joinEmail");
+  const phoneInput = document.getElementById("joinPhone");
+  const messageInput = document.getElementById("joinMessage");
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const OPEN_DELAY = reduceMotion ? 0 : 20;
+  const CLOSE_DURATION = reduceMotion ? 0 : 350;
+  const SUCCESS_SWITCH_DELAY = reduceMotion ? 0 : 200;
+
+  const iti = window.intlTelInput
+    ? window.intlTelInput(phoneInput, {
+        initialCountry: "ru",
+        // Dial code sits next to the flag as its own segment (+7),
+        // separate from the input — without this it's baked into the
+        // input's placeholder/value instead, which read oddly next to
+        // an already-selected country flag.
+        separateDialCode: true,
+        // Country names stay in English (no vanilla-script way to pull
+        // the library's ~200-entry translation file without a module
+        // loader) — just the interface strings, copied from its
+        // build/js/i18n/ru/interface.js so the search box etc. read
+        // in Russian like the rest of the page.
+        uiTranslations: {
+          selectedCountryAriaLabel: "Выбранная страна",
+          noCountrySelected: "Страна не выбрана",
+          countryListAriaLabel: "Список стран",
+          searchPlaceholder: "Поиск",
+          zeroSearchResults: "результатов не найдено",
+          oneSearchResult: "найден 1 результат",
+          multipleSearchResults: "Найдено ${count} результатов",
+        },
+      })
+    : null;
+
+  let lastFocused = null;
+  let closeTimer = null;
+
+  function autoGrow() {
+    messageInput.style.height = "auto";
+    messageInput.style.height = `${messageInput.scrollHeight}px`;
+  }
+  messageInput.addEventListener("input", autoGrow);
+
+  function setInvalid(el, bad) {
+    if (bad) el.setAttribute("aria-invalid", "true");
+    else el.removeAttribute("aria-invalid");
+  }
+
+  // Simple presence+shape check — good enough to catch typos, not a
+  // full RFC 5322 validator (nothing here needs that level of rigor).
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function focusablesIn(el) {
+    return Array.from(
+      el.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((n) => n.offsetParent !== null);
+  }
+
+  function onKeydown(e) {
+    if (e.key === "Escape") {
+      close();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusables = focusablesIn(dialog);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  function resetForm() {
+    form.reset();
+    if (iti) iti.setCountry("ru");
+    autoGrow();
+    errorEl.hidden = true;
+    [nameInput, emailInput, phoneInput].forEach((el) => setInvalid(el, false));
+    successState.hidden = true;
+    successState.classList.remove("is-shown");
+    formState.hidden = false;
+    formState.classList.remove("is-hiding");
+  }
+
+  function open() {
+    lastFocused = document.activeElement;
+    clearTimeout(closeTimer);
+    resetForm();
+    modal.hidden = false;
+    // Force a reflow so removing [hidden] and adding .is-open land in
+    // separate frames — otherwise the browser coalesces them and the
+    // opening transition never plays.
+    void modal.offsetWidth;
+    setTimeout(() => modal.classList.add("is-open"), OPEN_DELAY);
+    document.body.classList.add("join-modal-lock");
+    document.addEventListener("keydown", onKeydown);
+    setTimeout(() => nameInput.focus(), reduceMotion ? 0 : 320);
+  }
+
+  function close() {
+    modal.classList.remove("is-open");
+    document.body.classList.remove("join-modal-lock");
+    document.removeEventListener("keydown", onKeydown);
+    closeTimer = setTimeout(() => {
+      modal.hidden = true;
+    }, CLOSE_DURATION);
+    if (lastFocused) lastFocused.focus();
+  }
+
+  trigger.addEventListener("click", open);
+  modal.querySelectorAll("[data-close]").forEach((el) => el.addEventListener("click", close));
+
+  // Empty is never "invalid" on its own here — only content that's
+  // actually malformed gets the red border. Whether at least one
+  // contact method was given at all is a separate, form-level check
+  // (hasContact in the submit handler below).
+  function emailOk() {
+    const v = emailInput.value.trim();
+    return !v || isValidEmail(v);
+  }
+  function phoneOk() {
+    const v = phoneInput.value.trim();
+    return !v || (iti ? iti.isValidNumber() : true);
+  }
+
+  // Live feedback on blur, same rule the submit handler enforces — so
+  // a typo surfaces as soon as you tab away instead of only at submit.
+  emailInput.addEventListener("blur", () => setInvalid(emailInput, !emailOk()));
+  phoneInput.addEventListener("blur", () => setInvalid(phoneInput, !phoneOk()));
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const phoneRaw = phoneInput.value.trim();
+
+    const emailValid = emailOk();
+    const phoneValid = phoneOk();
+    const hasContact = (email && emailValid) || (phoneRaw && phoneValid);
+    const valid = Boolean(name) && emailValid && phoneValid && hasContact;
+
+    setInvalid(nameInput, !name);
+    setInvalid(emailInput, Boolean(email) && !emailValid);
+    setInvalid(phoneInput, Boolean(phoneRaw) && !phoneValid);
+    errorEl.hidden = valid;
+
+    if (!valid) return;
+
+    // No backend wired up yet — this is where the real request goes
+    // once there's somewhere to send it.
+    console.log("[joinForm] submit", {
+      name,
+      email: email || null,
+      phone: phoneRaw ? (iti ? iti.getNumber() : phoneRaw) : null,
+      message: messageInput.value.trim() || null,
+    });
+
+    formState.classList.add("is-hiding");
+    setTimeout(() => {
+      formState.hidden = true;
+      successState.hidden = false;
+      void successState.offsetWidth;
+      successState.classList.add("is-shown");
+    }, SUCCESS_SWITCH_DELAY);
+  });
 })();

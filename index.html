@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/css/intlTelInput.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
       </a>
       <span class="header-spacer"></span>
       <a class="header-phone" href="tel:+78123355553">8 812 335 55 53</a>
-      <a class="btn btn-accent header-cta" href="#contact">
+      <a class="btn btn-accent header-cta" href="https://org.praktis.ru/" target="_blank" rel="noopener">
         <span class="btn-label">Единый вход</span>
       </a>
     </div>
@@ -49,16 +50,16 @@
               <p class="hero-sub">Разработано застройщиком для застройщиков</p>
             </div>
             <div class="hero-cta-row">
-              <a class="btn btn-accent hero-cta" href="#contact">
+              <button type="button" class="btn btn-accent hero-cta" id="joinTrigger">
                 <span class="btn-label">Присоединиться</span>
                 <span class="btn-icon">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.9241 6.61722C17.8757 6.50014 17.804 6.3904 17.7092 6.29502C17.7078 6.2936 17.7064 6.29219 17.705 6.29078C17.5242 6.11106 17.2751 6 17 6H7C6.44772 6 6 6.44772 6 7C6 7.55228 6.44772 8 7 8H14.5858L6.29289 16.2929C5.90237 16.6834 5.90237 17.3166 6.29289 17.7071C6.68342 18.0976 7.31658 18.0976 7.70711 17.7071L16 9.41421V17C16 17.5523 16.4477 18 17 18C17.5523 18 18 17.5523 18 17V7.00069C18 6.99969 18 6.998 18 6.997C17.9996 6.8625 17.9727 6.73425 17.9241 6.61722Z" fill="white"/>
                   </svg>
                 </span>
-              </a>
-              <a class="btn btn-stroke hero-cta" href="#products">
-                <span class="btn-label">Перейти к сервисам</span>
+              </button>
+              <a class="btn btn-stroke hero-cta" href="https://etp.praktis.ru/entrance" target="_blank" rel="noopener">
+                <span class="btn-label">Актуальные тендеры</span>
                 <span class="btn-icon">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.9241 6.61722C17.8757 6.50014 17.804 6.3904 17.7092 6.29502C17.7078 6.2936 17.7064 6.29219 17.705 6.29078C17.5242 6.11106 17.2751 6 17 6H7C6.44772 6 6 6.44772 6 7C6 7.55228 6.44772 8 7 8H14.5858L6.29289 16.2929C5.90237 16.6834 5.90237 17.3166 6.29289 17.7071C6.68342 18.0976 7.31658 18.0976 7.70711 17.7071L16 9.41421V17C16 17.5523 16.4477 18 17 18C17.5523 18 18 17.5523 18 17V7.00069C18 6.99969 18 6.998 18 6.997C17.9996 6.8625 17.9727 6.73425 17.9241 6.61722Z" fill="white"/>
@@ -118,7 +119,7 @@
 
   <div class="wrap path-head" id="pathIntro">
     <h2>Один цифровой путь — от идеи до эксплуатации</h2>
-    <p>Шесть этапов стройки и сервисы Praktis, которые закрывают каждый из них</p>
+    <p>Семь этапов стройки и сервисы Praktis, которые закрывают каждый из них</p>
   </div>
 
   <section class="path-section" id="pathSection">
@@ -146,13 +147,12 @@
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-08.png" alt="">
                 <h4 class="path-service-title">Тендерная площадка</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <p class="path-service-desc">Для заказчиков и поставщиков — от холдингов до малого бизнеса</p>
+                <ul class="path-service-points">
+                  <li>Гибкий конструктор тендеров</li>
+                  <li>Работа со сметами</li>
+                  <li>Прозрачные процедуры</li>
+                  <li>Для холдингов и малого бизнеса</li>
                 </ul>
               </div>
             </div>
@@ -166,20 +166,41 @@
           <div class="path-stage">
             <div class="path-branch">
               <div class="path-service">
-                <img class="path-service-icon" src="assets/services/icon-04.png" alt="">
-                <h4 class="path-service-title">Личный кабинет контрагента</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <img class="path-service-icon" src="assets/services/icon-12.png" alt="">
+                <h4 class="path-service-title">Praktis.Finance</h4>
+                <p class="path-service-desc">Управление финансами строительных проектов для банков, застройщиков и инвесторов</p>
+                <ul class="path-service-points">
+                  <li>Быстрый старт по шаблонам</li>
+                  <li>История правок и сроков</li>
+                  <li>Автосверка данных из документов</li>
+                  <li>Автозаполнение с валидацией</li>
+                  <li>Аналитика: Гант, дашборды</li>
+                  <li>Аудит за пару дней по фильтрам</li>
                 </ul>
               </div>
             </div>
             <div class="path-node">
               <span class="path-node-dot">3</span>
+              <span class="path-node-stem" aria-hidden="true"></span>
+              <span class="path-node-label">Управление финансами</span>
+            </div>
+          </div>
+
+          <div class="path-stage">
+            <div class="path-branch">
+              <div class="path-service">
+                <img class="path-service-icon" src="assets/services/icon-04.png" alt="">
+                <h4 class="path-service-title">Личный кабинет контрагента</h4>
+                <p class="path-service-desc">Единая точка взаимодействия с Setl Group — аккредитация, договоры и акты выполненных работ</p>
+                <ul class="path-service-points">
+                  <li>Прохождение аккредитации</li>
+                  <li>Оформление договорной документации</li>
+                  <li>Акты по формам КС-2, КС-3, КС-6а</li>
+                </ul>
+              </div>
+            </div>
+            <div class="path-node">
+              <span class="path-node-dot">4</span>
               <span class="path-node-stem" aria-hidden="true"></span>
               <span class="path-node-label">Заключение сделок и сбор данных</span>
             </div>
@@ -190,54 +211,50 @@
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-09.png" alt="">
                 <h4 class="path-service-title">ICONA</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <p class="path-service-desc">Цифровая методология управления строительством</p>
+                <ul class="path-service-points">
+                  <li>Без срывов, брака и судов</li>
+                  <li>Поточный метод этаж-секция</li>
+                  <li>Строгая техпоследовательность</li>
+                  <li>Комплексный контроль качества</li>
                 </ul>
               </div>
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-02.png" alt="">
-                <h4 class="path-service-title">БРИО</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <h4 class="path-service-title">BRIO MRS</h4>
+                <p class="path-service-desc">Визуальный контроль строительства по BIM-модели</p>
+                <ul class="path-service-points">
+                  <li>Контроль соответствия проекта факту</li>
+                  <li>Своевременное выявление отклонений</li>
+                  <li>Снижение рисков ошибок и переделок</li>
+                  <li>Экономия сроков и затрат</li>
                 </ul>
               </div>
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-06.png" alt="">
                 <h4 class="path-service-title">Praktis.Object</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <p class="path-service-desc">Структура объекта и планирование объёмов работ</p>
+                <ul class="path-service-points">
+                  <li>Структура объекта: очередь, корпус, секция, этаж</li>
+                  <li>Данных об участниках строительства</li>
+                  <li>Планирование объёмов работ</li>
+                  <li>Связка со всеми сервисами Praktis</li>
                 </ul>
               </div>
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-05.png" alt="">
                 <h4 class="path-service-title">Praktis.Справочники</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <p class="path-service-desc">Централизованная нормативно-справочная информация</p>
+                <ul class="path-service-points">
+                  <li>Единая база справочных данных</li>
+                  <li>Создание и актуализация справочников</li>
+                  <li>Единый источник данных</li>
+                  <li>Связка со всеми сервисами Praktis</li>
                 </ul>
               </div>
             </div>
             <div class="path-node">
-              <span class="path-node-dot">4</span>
+              <span class="path-node-dot">5</span>
               <span class="path-node-stem" aria-hidden="true"></span>
               <span class="path-node-label">Управление строительством</span>
             </div>
@@ -248,32 +265,29 @@
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-07.png" alt="">
                 <h4 class="path-service-title">Praktis.ID</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автогенерация ИД</li>
-                  <li>ОЖР</li>
-                  <li>ИИ для распознавания</li>
-                  <li>Связь с актуальным проектом</li>
-                  <li>Интеграции</li>
-                  <li>Работа доступная студентам</li>
-                  <li>Прозрачность и аналитика</li>
+                <p class="path-service-desc">Ведение, подписание и комплектование исполнительной документации онлайн</p>
+                <ul class="path-service-points">
+                  <li>ОЖР и ЖВК онлайн</li>
+                  <li>Согласование и подписание онлайн</li>
+                  <li>Авто акты скрытых работ и спец актов</li>
+                  <li>Систематизация ИД</li>
+                  <li>Формирование комплектов ИД</li>
                 </ul>
               </div>
               <div class="path-service">
                 <img class="path-service-icon" src="assets/services/icon-03.png" alt="">
                 <h4 class="path-service-title">Praktis.KS</h4>
-                <p class="path-service-desc">Цифровизация, которая приносит прибыль и упрощает работу команды на площадке</p>
-                <ul class="path-service-points" hidden>
-                  <li>Автоматизация процессов</li>
-                  <li>Единая база данных</li>
-                  <li>Уведомления в реальном времени</li>
-                  <li>Интеграция с проектом</li>
-                  <li>Отчёты и аналитика</li>
+                <p class="path-service-desc">Актирование в цифровом виде</p>
+                <ul class="path-service-points">
+                  <li>Формирование КС-2, КС-3, КС-6</li>
+                  <li>Согласование объёмов онлайн</li>
+                  <li>Отслеживание прогресса в «шахматке»</li>
+                  <li>Интеграция с Praktis.ID и ICONA</li>
                 </ul>
               </div>
             </div>
             <div class="path-node">
-              <span class="path-node-dot">5</span>
+              <span class="path-node-dot">6</span>
               <span class="path-node-stem" aria-hidden="true"></span>
               <span class="path-node-label">Документация</span>
             </div>
@@ -286,7 +300,7 @@
               </div>
             </div>
             <div class="path-node">
-              <span class="path-node-dot">6</span>
+              <span class="path-node-dot">7</span>
               <span class="path-node-stem" aria-hidden="true"></span>
               <span class="path-node-label">Эксплуатация</span>
             </div>
@@ -298,10 +312,42 @@
     </div>
   </section>
 
-  <div class="path-popover" id="pathPopover" role="tooltip">
-    <h4 class="path-popover-title"></h4>
-    <ul class="path-popover-list"></ul>
-  </div>
+  <section class="stats-section" id="statsSection">
+    <div class="wrap stats-wrap">
+      <div class="stats-static" id="statsStatic">
+        <ul class="stats-items" id="statsItems">
+          <li class="stats-item">
+            <span class="stats-item-number">50%</span>
+            <div class="stats-item-body">
+              <h3 class="stats-item-title">Контроль строительства</h3>
+              <p class="stats-item-desc">–30–50% времени на проверки — за счёт мгновенного визуального контроля на объекте.</p>
+            </div>
+          </li>
+          <li class="stats-item">
+            <span class="stats-item-number">100%</span>
+            <div class="stats-item-body">
+              <h3 class="stats-item-title">Прозрачность процессов</h3>
+              <p class="stats-item-desc">100% замечаний с ответственными и статусами — без потерь и «забытых» задач.</p>
+            </div>
+          </li>
+          <li class="stats-item">
+            <span class="stats-item-number">70%</span>
+            <div class="stats-item-body">
+              <h3 class="stats-item-title">Раннее выявление отклонений</h3>
+              <p class="stats-item-desc">До 70% проблем выявляется до СМР — снижение объёма переделок.</p>
+            </div>
+          </li>
+          <li class="stats-item">
+            <span class="stats-item-number">3×</span>
+            <div class="stats-item-body">
+              <h3 class="stats-item-title">Упрощенный обмен данными</h3>
+              <p class="stats-item-desc">В 2–3 раза быстрее передача информации — все работают в одной актуальной среде.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
   <section class="stack-section" id="stackSection">
     <div class="stack-sticky">
@@ -459,25 +505,25 @@
           <p>Цифровизация закупочных процедур от заявки до контракта: единая площадка, проверенные поставщики и полная аналитика по каждой закупке.</p>
         </div>
         <div class="services-tiles">
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-01.png" alt="">
+          <a class="service-tile" href="https://etp.praktis.ru/" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-08.png" alt="">
             <div class="service-body">
               <h4 class="service-title">Тендерная площадка</h4>
               <p class="service-desc">Единая площадка для проведения закупок</p>
             </div>
           </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-02.png" alt="">
+          <a class="service-tile" href="https://finance.setltech.ru/" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-12.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Реестр поставщиков</h4>
-              <p class="service-desc">База проверенных подрядчиков и поставщиков</p>
+              <h4 class="service-title">Praktis.Finance</h4>
+              <p class="service-desc">Управление финансами строительных проектов</p>
             </div>
           </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-03.png" alt="">
+          <a class="service-tile" href="https://lkk.setlgroup.ru/" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-04.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Аналитика закупок</h4>
-              <p class="service-desc">Отчёты и статистика по тендерам</p>
+              <h4 class="service-title">Личный кабинет контрагента</h4>
+              <p class="service-desc">Аккредитация, договоры и акты</p>
             </div>
           </a>
         </div>
@@ -489,32 +535,32 @@
           <p>Контроль графика, ресурсов и качества на площадке — от диспетчеризации работ до отчётности прораба, в одном интерфейсе.</p>
         </div>
         <div class="services-tiles">
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-04.png" alt="">
+          <a class="service-tile" href="https://setltech.ru/setlsoft" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-09.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Диспетчеризация</h4>
+              <h4 class="service-title">ICONA</h4>
               <p class="service-desc">Контроль работ и ресурсов в реальном времени</p>
             </div>
           </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-05.png" alt="">
+          <div class="service-tile is-disabled">
+            <img class="service-icon" src="assets/services/icon-02.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">График производства</h4>
+              <h4 class="service-title">BRIO MRS</h4>
               <p class="service-desc">Календарное планирование этапов стройки</p>
             </div>
-          </a>
-          <a class="service-tile" href="#">
+          </div>
+          <a class="service-tile" href="https://object.praktis.ru/" target="_blank" rel="noopener">
             <img class="service-icon" src="assets/services/icon-06.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Стройконтроль</h4>
-              <p class="service-desc">Фиксация нарушений и предписаний</p>
+              <h4 class="service-title">Praktis.Object</h4>
+              <p class="service-desc">Структура объекта и планирование объёмов работ</p>
             </div>
           </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-07.png" alt="">
+          <a class="service-tile" href="https://catalog.praktis.ru/directories" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-05.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Кабинет прораба</h4>
-              <p class="service-desc">Задачи и отчётность с площадки</p>
+              <h4 class="service-title">Praktis.Справочники</h4>
+              <p class="service-desc">Централизованная нормативно-справочная информация</p>
             </div>
           </a>
         </div>
@@ -525,26 +571,19 @@
           <h2>Документация</h2>
           <p>Работа с исполнительной и проектной документацией без бумаги — от формирования ИД до архива в едином хранилище.</p>
         </div>
-        <div class="services-tiles">
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-08.png" alt="">
+        <div class="services-tiles services-tiles--pair">
+          <a class="service-tile" href="praktis-id.html">
+            <img class="service-icon" src="assets/services/icon-07.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Исполнительная документация</h4>
-              <p class="service-desc">Формирование и хранение ИД</p>
+              <h4 class="service-title">Praktis.ID</h4>
+              <p class="service-desc">Ведение, подписание и комплектование ИД онлайн</p>
             </div>
           </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-09.png" alt="">
+          <a class="service-tile" href="https://ks.praktis.ru/" target="_blank" rel="noopener">
+            <img class="service-icon" src="assets/services/icon-03.png" alt="">
             <div class="service-body">
-              <h4 class="service-title">Электронный документооборот</h4>
-              <p class="service-desc">Согласование и подписание документов онлайн</p>
-            </div>
-          </a>
-          <a class="service-tile" href="#">
-            <img class="service-icon" src="assets/services/icon-10.png" alt="">
-            <div class="service-body">
-              <h4 class="service-title">Архив проектов</h4>
-              <p class="service-desc">Единое хранилище проектной документации</p>
+              <h4 class="service-title">Praktis.KS</h4>
+              <p class="service-desc">Актирование в цифровом виде</p>
             </div>
           </a>
         </div>
@@ -568,6 +607,58 @@
   </div>
 </footer>
 
+<div class="join-modal" id="joinModal" hidden>
+  <div class="join-modal-backdrop" data-close></div>
+  <div class="join-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="joinModalTitle">
+    <button type="button" class="join-modal-close" data-close aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="join-modal-scroll">
+      <div class="join-form-state" id="joinFormState">
+        <h3 class="join-modal-title" id="joinModalTitle">Автоматизация рутины и минимизация рисков</h3>
+        <p class="join-modal-intro">У нас есть вся информация, и мы готовы поделиться ей любым удобным для вас способом: созвонимся или ответим на почту, проведём видеоконференцию — а если удобнее, приедем лично.</p>
+
+        <form class="join-form" id="joinForm" novalidate>
+          <div class="join-field">
+            <label for="joinName">ФИО</label>
+            <input type="text" id="joinName" name="name" autocomplete="name" placeholder="Как мы можем к вам обращаться" required>
+          </div>
+          <div class="join-field">
+            <label for="joinPhone">Телефон</label>
+            <input type="tel" id="joinPhone" name="phone" autocomplete="tel">
+          </div>
+          <div class="join-field">
+            <label for="joinEmail">Email</label>
+            <input type="email" id="joinEmail" name="email" autocomplete="email" placeholder="mail@mail.ru">
+          </div>
+          <div class="join-field">
+            <label for="joinMessage">Комментарий</label>
+            <textarea id="joinMessage" name="message" rows="3"></textarea>
+          </div>
+
+          <p class="join-form-error" id="joinFormError" hidden>Укажите ФИО и хотя бы один способ связи — телефон или email</p>
+
+          <button type="submit" class="btn btn-accent join-submit">
+            <span class="btn-label">Отправить</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="join-success-state" id="joinSuccess" hidden>
+        <svg class="join-success-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="23" stroke="currentColor" stroke-width="2"/>
+          <path d="M14 24.5L20.5 31L34 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="join-success-text">Спасибо! Мы свяжемся с Вами очень скоро</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/intlTelInputWithUtils.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

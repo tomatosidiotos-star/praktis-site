@@ -122,8 +122,12 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 12px;
+  font: inherit;
   font-weight: 500;
   white-space: nowrap;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
@@ -457,6 +461,216 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
 }
 
+/* Stats section — sticky "digit belt" between the hero and the path
+   diagram. The left plate shows one crisp active number, cropped to a
+   short window; the same number strip, uncropped and very pale, sits
+   behind it and bleeds above/below the plate onto the page background
+   (z-index:-1 against the plate's own solid bg hides it exactly within
+   the plate's own bounds — see script.js for why this works without an
+   explicit stacking context). The right panel's title/description move
+   in sync. All three "filmstrips" (ghost, active, text) are one
+   continuous absolutely-stacked strip each, moved as a whole by a
+   single translateY — cheaper than animating every item individually
+   and gives the same result.
+
+   The move itself is a discrete snap, not a value tied 1:1 to scroll
+   position: script.js only writes a new translateY when the active
+   index actually changes (scroll progress crossing the midpoint to the
+   next stat), and lets this rule's transition animate that one jump.
+   Between snaps, nothing moves — the previous stat's number and text
+   stay fully still — which is what makes the reveal read as one clean
+   slide instead of a number/paragraph you can drag around mid-scroll.
+
+   Desktop + motion-ok only: `.stats-static` (already real content, not
+   a JS-only fallback) stays the only thing rendered on mobile or under
+   reduced-motion — script.js simply never builds the animated version
+   there, so there's nothing extra to disable. */
+
+.stats-section {
+  padding: clamp(24px, 3.1vw, 32px) 0;
+}
+
+@media (min-width: 901px) {
+  .stats-wrap {
+    max-width: 60vw;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.stats-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stats-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(24px, 2.5vw, 32px);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.stats-item-number {
+  font-size: clamp(40px, 4.4vw, 56px);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.stats-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-item-title {
+  margin: 0;
+  font-size: clamp(18px, 1.5vw, 22px);
+}
+
+.stats-item-desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* Animated version — built by script.js, inserted before .stats-static
+   (which it hides) only on desktop with motion allowed. */
+
+.stats-pin-wrap {
+  position: relative;
+}
+
+.stats-sticky {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+.stats-row {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(24px, 3vw, 48px);
+  width: 100%;
+}
+
+.stats-plate {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(220px, 30%, 380px);
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-card);
+  background: var(--accent);
+}
+
+.stats-plate-ghost {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stats-plate-ghost-item {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  font-weight: 800;
+  font-size: clamp(44px, 6.4vw, 92px);
+  line-height: 1;
+  white-space: nowrap;
+  color: rgba(60, 131, 246, 0.14);
+}
+
+.stats-plate-mask {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.stats-plate-active {
+  position: relative;
+  width: 100%;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stats-plate-active-item {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  font-weight: 800;
+  font-size: clamp(44px, 6.4vw, 92px);
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.stats-panel {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: clamp(28px, 3.5vw, 48px);
+}
+
+.stats-text-window {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 480px;
+}
+
+.stats-text-track {
+  position: relative;
+  width: 100%;
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stats-text-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.stats-text-title {
+  margin: 0 0 12px;
+}
+
+.stats-text-desc {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
 /* Services section — three rows (Тендеры / Управление строительством /
    Документация), heading on the left, a cluster of service tiles on
    the right sized like the hero's category tiles and laid out two
@@ -509,6 +723,15 @@ img { display: block; max-width: 100%; }
   gap: 24px;
 }
 
+/* Only two tiles (Документация): lay them side by side at the same
+   tile size instead of stacking in one column, so the row doesn't
+   stretch to a two-row height it doesn't need. */
+.services-tiles--pair {
+  grid-template-rows: minmax(200px, 1fr);
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  grid-auto-flow: row;
+}
+
 .service-tile {
   display: flex;
   flex-direction: column;
@@ -548,9 +771,16 @@ img { display: block; max-width: 100%; }
   transform: translateY(-4px);
 }
 
+/* No real destination yet — plain non-interactive tile, same look at
+   rest but no hover affordance implying it's clickable. */
+.service-tile.is-disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
 .service-icon {
-  width: clamp(40px, 4vw, 56px);
-  height: clamp(40px, 4vw, 56px);
+  width: clamp(56px, 5.5vw, 76px);
+  height: clamp(56px, 5.5vw, 76px);
   object-fit: contain;
 }
 
@@ -587,7 +817,8 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) {
   .services-row { grid-template-columns: 1fr; }
-  .services-tiles {
+  .services-tiles,
+  .services-tiles--pair {
     grid-template-rows: none;
     grid-auto-flow: row;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -681,7 +912,14 @@ img { display: block; max-width: 100%; }
   display: inline-flex;
   align-items: stretch;
   gap: clamp(64px, 7.5vw, 128px);
-  padding: 0 clamp(24px, 6vw, 120px);
+  /* Left padding much bigger than right (desktop pin only — mobile's
+     native-scroll override further down resets this to a plain 20px):
+     at pan 0 the first stage used to sit only ~24-120px from the left
+     edge, so the very first bit of scroll input already panned past
+     it before it had a moment to register — a couple of scroll ticks
+     and stages 1-2 were gone. This starts stage 1 closer to the
+     viewport's middle instead. */
+  padding: 0 clamp(24px, 6vw, 120px) 0 clamp(120px, 36vw, 520px);
   will-change: transform;
 }
 
@@ -713,7 +951,7 @@ img { display: block; max-width: 100%; }
   min-width: 140px;
 }
 
-/* Invisible spacer the width of stage 6, appended after it — so the
+/* Invisible spacer the width of the last stage, appended after it — so the
    frozen end-of-pan frame (script.js) leaves it a bit of breathing
    room on the right instead of sitting flush against the edge. */
 .path-spacer {
@@ -724,9 +962,21 @@ img { display: block; max-width: 100%; }
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   max-width: 400px;
   padding-bottom: 140px;
+}
+
+/* Desktop (pinned pan) only: lay every stage's cards out in a single
+   row instead of wrapping 2-per-row — stage 5's 4 cards included.
+   Mobile keeps the wrap+cap above since it skips the pin and scrolls
+   the track natively, where a very wide single row per stage would
+   fight the swipe/snap behavior instead of helping it. */
+@media (min-width: 901px) {
+  .path-branch {
+    flex-wrap: nowrap;
+    max-width: none;
+  }
 }
 
 .path-node {
@@ -744,7 +994,7 @@ img { display: block; max-width: 100%; }
   height: 80px;
   background: var(--accent);
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.25s ease;
 }
 
 .path-node.is-revealed .path-node-stem {
@@ -765,7 +1015,7 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 8px 20px rgba(60, 131, 246, 0.28);
   opacity: 0;
   transform: scale(0.5);
-  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .path-node.is-revealed .path-node-dot {
@@ -780,7 +1030,7 @@ img { display: block; max-width: 100%; }
   white-space: nowrap;
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .path-node-label.is-revealed {
@@ -789,11 +1039,12 @@ img { display: block; max-width: 100%; }
 }
 
 .path-service {
-  width: clamp(150px, 13vw, 190px);
-  display: flex;
-  flex-direction: column;
+  width: clamp(180px, 16vw, 240px);
+  height: clamp(225px, 20vw, 300px);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
   gap: 8px;
-  padding: 16px;
+  padding: 20px;
   border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid transparent;
@@ -802,7 +1053,7 @@ img { display: block; max-width: 100%; }
   /* Not revealed yet = not really there — otherwise its hover state
      and popover trigger are reachable before it's visible. */
   pointer-events: none;
-  transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .path-service.is-revealed { opacity: 1; transform: translateY(0); pointer-events: auto; }
@@ -821,137 +1072,136 @@ img { display: block; max-width: 100%; }
 }
 
 .path-service-icon {
-  width: clamp(30px, 2.6vw, 38px);
-  height: clamp(30px, 2.6vw, 38px);
+  width: clamp(40px, 3.6vw, 52px);
+  height: clamp(40px, 3.6vw, 52px);
   object-fit: contain;
 }
 
 .path-service-title {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(16px, 1.3vw, 19px);
   font-weight: 600;
   color: var(--accent);
   line-height: 1.3;
 }
 
-/* Fixed to exactly 4 lines (12.5px * 1.45 line-height) regardless of
-   actual copy length, so every card in a row lands the same height. */
-.path-service-desc {
+/* Description and checklist share the same grid cell (row 3) and
+   crossfade on hover — no separate floating popover to position. Both
+   fill whatever's left of the card's fixed height and clip there, no
+   exact line-count math to keep in sync with font size. */
+.path-service-desc,
+.path-service-points {
+  grid-row: 3;
+  grid-column: 1;
   margin: 0;
-  height: calc(12.5px * 1.45 * 4);
   overflow: hidden;
-  font-size: 12.5px;
+  transition: opacity 0.2s ease;
+}
+
+.path-service-desc {
+  font-size: 14px;
   line-height: 1.45;
   color: var(--ink-soft);
 }
 
-/* Hover popover: a single shared element, repositioned and refilled
-   from whichever card is hovered (script.js). Lives outside
-   .path-track on purpose — that element is transformed for the pan,
-   and a transformed ancestor would turn this popover's `position:
-   fixed` into something scoped to that ancestor instead of the real
-   viewport. */
-.path-popover {
-  position: fixed;
-  z-index: 60;
-  width: clamp(300px, 26vw, 360px);
-  padding: 24px;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  box-shadow: 0 32px 64px rgba(15, 23, 42, 0.22), 0 8px 20px rgba(15, 23, 42, 0.1);
-  opacity: 0;
-  transform: scale(0.92) translateY(10px);
-  pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.path-popover.is-visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-}
-
-.path-popover-title {
-  margin: 0 0 16px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.path-popover-list {
+.path-service-points {
   list-style: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-}
-
-.path-popover-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.path-popover-item.is-shown {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.path-popover-check {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  border: 1.5px solid var(--accent);
-  display: flex;
-  align-items: center;
   justify-content: center;
+  gap: 6px;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.path-popover-check svg {
-  width: 13px;
-  height: 13px;
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 17;
-  stroke-dashoffset: 17;
-  transition: stroke-dashoffset 0.3s ease 0.05s;
-}
-
-.path-popover-item.is-shown .path-popover-check svg {
-  stroke-dashoffset: 0;
-}
-
-.path-popover-item-text {
-  font-size: 14.5px;
-  font-weight: 500;
+.path-service-points li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 13px;
   line-height: 1.3;
   color: var(--ink);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .path-popover { transition: opacity 0.2s ease; transform: none !important; }
-  .path-popover-item { transition: opacity 0.2s ease; transform: none !important; }
-  .path-popover-check svg { transition: none; }
+.path-service-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1.5px solid var(--accent);
 }
 
-/* Hover-triggered, so it has no useful behavior on touch. */
+/* Item count alone doesn't predict whether a list fits this fixed-
+   height cell — wording matters just as much (a 4-item list with long
+   phrases can overflow where a tighter 5-item one doesn't) — so this
+   tightened variant kicks in from 4 items up rather than only at the
+   original 6+, giving longer real copy more headroom. :has() falls
+   back gracefully either way (the list above already scrolls on
+   overflow). */
+.path-service-points:has(li:nth-child(4)) {
+  gap: 3px;
+}
+
+.path-service-points:has(li:nth-child(4)) li {
+  font-size: 12px;
+  line-height: 1.2;
+  padding-left: 17px;
+}
+
+.path-service-points:has(li:nth-child(4)) li::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+/* Hover-only, same as the rest of the card's hover state below —
+   touch has no hover, so the checklist there just stays unreached,
+   same as the popover it replaced. */
+@media (hover: hover) and (pointer: fine) {
+  .path-service:hover .path-service-desc {
+    opacity: 0;
+  }
+
+  .path-service:hover .path-service-points {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Touch has no hover, so a tap does the same crossfade job instead —
+   toggled by script.js as an accordion (opening one card in a branch
+   closes any other open card in that same branch). The .is-open class
+   is applied unconditionally by the JS regardless of input type; only
+   this (hover: none) media query ever reads it, so it's inert and
+   harmless on mouse/trackpad devices where the rule above already
+   covers hover. */
 @media (hover: none) {
-  .path-popover { display: none; }
+  .path-service.is-open .path-service-desc {
+    opacity: 0;
+  }
+
+  .path-service.is-open .path-service-points {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
-/* Stage 6's card is the finished building itself, in the same
-   portrait style as the stack section's video card — bigger than a
-   regular service tile, but a smaller echo of that one. */
+/* Video bookend cards (stage 1 "Концепция", stage 7 "Эксплуатация") —
+   portrait style echoing the stack section's video card, sized by its
+   own 4:5 aspect ratio rather than the fixed height above; the two
+   happen to land on the same numbers, so every stage in the row now
+   reads as one consistent card height. */
 .path-service-video {
+  /* Not a grid — .path-service's auto-sized rows only give a definite
+     height to feed the video's height:100% below in a flow layout;
+     in an auto grid row that percentage wouldn't resolve. */
+  display: block;
   width: clamp(180px, 16vw, 240px);
+  height: auto;
   aspect-ratio: 4 / 5;
   padding: 0;
   overflow: hidden;
@@ -962,6 +1212,18 @@ img { display: block; max-width: 100%; }
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* Whole path-diagram block hidden on mobile for now (2026-09-08) —
+   the mobile card layout/slider for stages 5-6 turned out visually
+   broken on a real device, reverting it isn't a quick fix, so the
+   block is pulled from mobile entirely until a real replacement
+   design is ready. Desktop is untouched. */
+@media (max-width: 900px) {
+  #pathIntro,
+  .path-section {
+    display: none;
+  }
 }
 
 @media (max-width: 900px), (prefers-reduced-motion: reduce) {
@@ -976,6 +1238,37 @@ img { display: block; max-width: 100%; }
   }
   .path-track { padding: 0 20px; gap: 40px; }
   .path-stage { scroll-snap-align: center; }
+}
+
+/* Stages with more than one card (5: ICONA/BRIO/Object/Справочники, 6:
+   ID/KS) get their own tiny horizontal scroller here instead of
+   wrapping 2-per-row — one card in focus, the next peeking in at the
+   edge so the swipe reads as "more cards here," not "that's
+   everything." :has() scopes this to branches with 2+ cards; a
+   single-card branch is already full width with nothing to scroll, so
+   it's untouched. overscroll-behavior-x keeps a swipe run past the
+   last card from also dragging the outer stage-to-stage scroller
+   above. Width is sized off .path-service's mobile floor (180px) plus
+   its 20px gap plus ~45px of peek — revisit both numbers together if
+   either changes. script.js redraws each such stage's single
+   connector line to whichever card this lands on. */
+@media (max-width: 900px) {
+  .path-branch:has(.path-service:nth-child(2)) {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: none;
+    width: 245px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .path-branch:has(.path-service:nth-child(2)) .path-service {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1166,6 +1459,309 @@ img { display: block; max-width: 100%; }
 
 .footer-contacts p { margin: 4px 0 0; }
 .footer-contacts p:first-child { margin-top: 0; }
+
+/* Join modal ("Присоединиться"): a plain centered dialog — no
+   button-position morphing like the popover we removed from the path
+   diagram — with a quick backdrop+card fade/scale entrance. The
+   personality is in the content stagger below, reusing the same
+   fade+translateY curve (cubic-bezier(0.22,1,0.36,1)) used across the
+   rest of the page (tile-card, service-tile, path-service reveals),
+   so it reads as the same site rather than a bolted-on component. */
+.join-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* [hidden] alone would lose to the class rule above at equal
+   specificity (author rules cascade over the UA [hidden] rule) —
+   spelled out explicitly so closed always really means display:none. */
+.join-modal[hidden] {
+  display: none;
+}
+
+.join-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.join-modal.is-open .join-modal-backdrop {
+  opacity: 1;
+}
+
+.join-modal-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  /* Clips the inner scroller (below) to these rounded corners — a
+     native scrollbar is a straight bar and doesn't know about
+     border-radius on its own, so without this it ran the dialog's
+     full height straight through the curved corners. */
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: 0 32px 64px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: scale(0.94) translateY(16px);
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.join-modal.is-open .join-modal-dialog {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* The actual scroll container — plain rectangle, no border-radius of
+   its own, sized to fill whatever height .join-modal-dialog has left
+   (min-height: 0 is the usual flex fix that lets a flex child shrink
+   and scroll instead of growing to fit its content). Close button
+   stays outside this, in .join-modal-dialog itself, so it doesn't
+   scroll away with the content. */
+.join-modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(28px, 4vw, 44px);
+}
+
+.join-modal-close {
+  position: absolute;
+  top: clamp(16px, 2vw, 24px);
+  right: clamp(16px, 2vw, 24px);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.join-modal-close:hover,
+.join-modal-close:focus-visible {
+  background: #f4f8ff;
+  color: var(--accent);
+  outline: none;
+}
+
+.join-modal-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.join-modal-title {
+  margin: 0 0 12px;
+  padding-right: 36px;
+}
+
+.join-modal-intro {
+  margin: 0 0 clamp(20px, 2.4vw, 28px);
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Content stagger: each piece fades/rises in on its own delay once
+   .is-open lands — same idea as the old popover's per-item stagger,
+   but plain CSS since this markup is static (no per-hover content to
+   re-time in JS). */
+.join-modal-title,
+.join-modal-intro,
+.join-field,
+.join-form-error,
+.join-submit {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.join-modal.is-open .join-modal-title,
+.join-modal.is-open .join-modal-intro,
+.join-modal.is-open .join-field,
+.join-modal.is-open .join-form-error,
+.join-modal.is-open .join-submit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.join-modal.is-open .join-modal-title { transition-delay: 0.05s; }
+.join-modal.is-open .join-modal-intro { transition-delay: 0.12s; }
+.join-modal.is-open .join-field:nth-of-type(1) { transition-delay: 0.19s; }
+.join-modal.is-open .join-field:nth-of-type(2) { transition-delay: 0.25s; }
+.join-modal.is-open .join-field:nth-of-type(3) { transition-delay: 0.31s; }
+.join-modal.is-open .join-field:nth-of-type(4) { transition-delay: 0.37s; }
+.join-modal.is-open .join-submit { transition-delay: 0.43s; }
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.join-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.join-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.join-field input,
+.join-field textarea {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.join-field input:focus-visible,
+.join-field textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.join-field input[aria-invalid="true"],
+.join-field .iti--invalid input {
+  border-color: #e0554f;
+}
+
+.join-field textarea {
+  resize: none;
+  overflow: hidden;
+  min-height: calc(1.5em * 3 + 24px);
+}
+
+/* intl-tel-input ships display:inline-block by default. */
+.join-field .iti {
+  width: 100%;
+}
+
+.join-field .iti input {
+  width: 100%;
+}
+
+/* Every .join-field above gets `transform` for its own reveal
+   (styles above), and any non-none transform creates a new stacking
+   context — so without this, the phone field's country dropdown
+   (z-index:2, scoped to that context) paints *behind* the plain
+   later fields' stacking contexts, which sit after it in DOM order.
+   An explicit z-index outranks their z-index:auto regardless of
+   order. */
+.join-field:has(.iti) {
+  position: relative;
+  z-index: 5;
+}
+
+.join-form-error {
+  margin: -4px 0 0;
+  font-size: 13.5px;
+  color: #e0554f;
+}
+
+.join-submit {
+  align-self: stretch;
+  justify-content: center;
+  padding: 14px;
+  margin-top: 4px;
+  border: 0;
+  cursor: pointer;
+}
+
+.join-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: clamp(12px, 2vw, 24px) 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Same trap as .join-modal[hidden] below: this class's own `display`
+   outranks the UA [hidden] rule at equal specificity, so without this
+   the success block stayed in flow (just invisible via opacity) while
+   hidden — reserving its full height as blank space under the form. */
+.join-success-state[hidden] {
+  display: none;
+}
+
+.join-success-state.is-shown {
+  opacity: 1;
+}
+
+.join-success-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--accent);
+}
+
+.join-success-text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.join-form-state.is-hiding {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+body.join-modal-lock {
+  overflow: hidden;
+}
+
+/* intl-tel-input theming: swap its default palette for the site's. */
+.join-modal-dialog {
+  --iti-border-color: var(--line);
+  --iti-dropdown-bg: var(--surface);
+  --iti-hover-color: #f4f8ff;
+  --iti-arrow-color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .join-modal-backdrop,
+  .join-modal-dialog,
+  .join-modal-title,
+  .join-modal-intro,
+  .join-field,
+  .join-form-error,
+  .join-submit,
+  .join-success-state,
+  .join-form-state.is-hiding {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .join-modal { padding: 12px; }
+  .join-modal-dialog { max-height: calc(100vh - 24px); }
+}
 
 /* Responsive */
 

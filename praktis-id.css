@@ -1,0 +1,712 @@
+/* Praktis.ID — internal service page. Loads after styles.css and reuses
+   its tokens (--accent/--ink/--bg/--radius-card) plus the site's reveal
+   convention: default state opacity:0 + transform, a state class flips
+   it, transition curve is always cubic-bezier(0.22,1,0.36,1). */
+
+/* Breadcrumb */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px clamp(16px, 1.7vw, 32px) 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.breadcrumb.is-revealed { opacity: 1; transform: none; }
+
+.breadcrumb a { color: var(--ink-soft); transition: color 0.2s ease; }
+.breadcrumb a:hover, .breadcrumb a:focus-visible { color: var(--accent); }
+.breadcrumb-sep { color: var(--icon-muted); }
+.breadcrumb-current { color: var(--ink); font-weight: 500; }
+
+/* Hero: title + subtitle + CTA card, slider underneath. Both halves
+   fade up on load with a short stagger, driven by .pid-hero.is-loaded
+   (added on next animation frame after paint) same technique as
+   .join-modal.is-open's transition-delay staggering. */
+
+.pid-hero {
+  /* Half the active slide's own box (width/height) — shared by the
+     card's bottom padding, the slider's overlap offset, and the arrow
+     positions below, so all three stay in sync off one source. */
+  --slide-half: min(465px, 46vw);
+  --slide-h-half: min(241px, 23.9vw);
+  padding: 28px 0 0;
+}
+
+.pid-hero-card {
+  max-width: 1440px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: clamp(48px, 7vw, 96px) clamp(24px, 4vw, 64px) calc(clamp(32px, 4vw, 56px) + var(--slide-h-half));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+
+.pid-hero-title,
+.pid-hero-sub,
+.pid-hero-cta {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-hero-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 1.1vw, 18px);
+  /* Mirrors the global h1{font-size} clamp — the icon below is sized
+     in em off THIS, since it's a sibling of the h1 (not a descendant),
+     so it wouldn't otherwise inherit the heading's own font-size. */
+  font-size: clamp(30px, 3.65vw, 70px);
+}
+
+.pid-hero-title h1 { margin: 0; }
+
+.pid-hero-icon {
+  height: 0.72em;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.pid-hero.is-loaded .pid-hero-title,
+.pid-hero.is-loaded .pid-hero-sub,
+.pid-hero.is-loaded .pid-hero-cta {
+  opacity: 1;
+  transform: none;
+}
+
+.pid-hero.is-loaded .pid-hero-title { transition-delay: 0.05s; }
+.pid-hero.is-loaded .pid-hero-sub { transition-delay: 0.14s; }
+.pid-hero.is-loaded .pid-hero-cta { transition-delay: 0.23s; }
+
+.pid-hero-sub {
+  margin: 0;
+  max-width: 60ch;
+  font-size: clamp(15px, 1.1vw, 18px);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.pid-hero-cta {
+  font-size: clamp(15px, 1.1vw, 17px);
+  padding: clamp(10px, 0.9vw, 12px) clamp(10px, 0.9vw, 12px) clamp(10px, 0.9vw, 12px) clamp(20px, 1.8vw, 26px);
+  gap: clamp(10px, 0.9vw, 12px);
+  margin-top: 8px;
+}
+
+/* Slider sits OUTSIDE .pid-hero-card (sibling, not child) and is pulled
+   up by half its own height via a negative margin-top — so its top half
+   overlaps the white card and its bottom half spills onto the page
+   background, matching the Figma reference (card ends right at the
+   slider's vertical middle, arrows straddle that line). --slide-half is
+   reused by the arrows below to sit exactly on the active slide's own
+   edges instead of the outer layout's edges. */
+
+.pid-slider {
+  position: relative;
+  width: 100%;
+  /* Viewport below adds 10px top/bottom padding so the slide's own
+     10px outline has room to paint (its overflow:hidden clips the
+     outline otherwise, since without this the viewport's height was
+     an exact match for the slide's box, leaving zero margin). That
+     10px is added back here so the overlap math still lands the
+     slide's centre — not the padded viewport's — on the card's edge. */
+  margin-top: calc(-1 * (var(--slide-h-half) + 10px));
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-hero.is-loaded .pid-slider {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.32s;
+}
+
+/* Full-bleed breakout: the clipping edge sits at the true viewport
+   edge (100vw), not .wrap's inset/max-width boundary, so the peeking
+   side slides run off the actual screen edge instead of being cut
+   mid-page. JS centering math is unaffected — it only reads offsets
+   *inside* this box, never its absolute position on the page. */
+.pid-slider-viewport {
+  overflow: hidden;
+  padding: 10px 0;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+.pid-slider-track {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.pid-slider-track.is-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.pid-slide {
+  flex: 0 0 auto;
+  margin: 0;
+  width: min(930px, 92vw);
+  aspect-ratio: 931 / 483;
+  background: var(--surface);
+  outline: 10px solid #4b5967;
+  outline-offset: 0;
+  border-radius: 30px;
+  overflow: hidden;
+  opacity: 0.45;
+  transform: scale(0.86);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pid-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pid-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.pid-slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.pid-slider-arrow svg { width: 20px; height: 20px; }
+
+.pid-slider-arrow:hover,
+.pid-slider-arrow:focus-visible {
+  background: var(--accent-dark);
+  box-shadow: 0 12px 24px rgba(60, 131, 246, 0.32);
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Centered on the active slide's own edge (half on the frame, half
+   over the peeking neighbor) — not the outer slider/layout edge. */
+/* Clamped to 0 so on narrow viewports (slide nearly as wide as the
+   container) the arrow settles at the container edge instead of
+   pushing past the true page edge and causing horizontal scroll. */
+.pid-slider-arrow--prev { left: max(0px, calc(50% - var(--slide-half) - 26px)); }
+.pid-slider-arrow--next { right: max(0px, calc(50% - var(--slide-half) - 26px)); }
+.pid-slider-arrow--prev svg { transform: rotate(180deg); }
+
+.pid-slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.pid-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: var(--icon-muted);
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pid-dot.is-active {
+  background: var(--accent);
+  transform: scale(1.25);
+}
+
+/* Shared section scaffolding */
+
+.pid-section { padding: clamp(56px, 7vw, 108px) 0; }
+
+.pid-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto clamp(32px, 4vw, 56px);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-section-head.is-revealed { opacity: 1; transform: none; }
+
+.pid-eyebrow {
+  margin: 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pid-section-head p {
+  margin: 0;
+  font-size: clamp(15px, 1.1vw, 18px);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* Methodology — plain card on mobile/reduced-motion (base rules below,
+   four stacked lines/paragraphs read fine even static). On desktop
+   with motion allowed, the section below overrides this into a pinned
+   "big text lights up word by word as you scroll" reveal:
+   .pid-method-pin-wrap gets real scroll height (220vh) so
+   .pid-method-pin can sit position:sticky inside it — each WORD
+   dims→lights as its point in the text scrolls past (JS wraps every
+   word in .pid-method-word, walking each line so paragraph structure
+   and the <em> phrases survive the wrap — see praktis-id.js), same
+   continuous-progress technique as the steps timeline's fill line,
+   just driving word opacity instead of a bar. The enumerated phrases
+   (<em>) get accent + italic everywhere, not just on desktop — that's
+   a content/typography choice, not part of the scroll effect. */
+
+.pid-method-section { padding-bottom: 0; }
+
+.pid-method-pin {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: clamp(28px, 3.4vw, 48px) clamp(16px, 1.7vw, 32px);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+}
+
+/* Left-aligned to match .pid-method-text below it, instead of the
+   generic centered .pid-section-head used everywhere else on the
+   page — also lets the heading sit on one line instead of wrapping.
+   Both this and .pid-method-text get width:100% (capped by the same
+   max-width) rather than shrink-to-fit their own content — without
+   that, .pid-method-pin's align-items:center would center each box
+   independently at its own (different) content width, and their left
+   edges — not just their centers — would stop lining up. */
+.pid-method-pin .pid-section-head {
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 0 40px;
+  text-align: left;
+}
+
+.pid-method-pin .pid-eyebrow { margin: 0; }
+
+.pid-method-text {
+  margin: 0;
+  font-size: clamp(16px, 1.2vw, 19px);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.pid-method-line { display: block; }
+.pid-method-line + .pid-method-line { margin-top: 0.5em; }
+
+.pid-method-text em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: inherit;
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .pid-method-section { padding-bottom: clamp(56px, 7vw, 108px); }
+
+  .pid-method-pin-wrap {
+    position: relative;
+    height: 220vh;
+  }
+
+  .pid-method-pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: none;
+    margin: 0;
+    padding: 0 clamp(16px, 1.7vw, 32px);
+    background: none;
+    border-radius: 0;
+  }
+
+  .pid-method-text {
+    width: 100%;
+    max-width: 1000px;
+    text-align: left;
+    font-size: clamp(22px, 2.6vw, 36px);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .pid-method-line + .pid-method-line { margin-top: 0.35em; }
+
+  .pid-method-word {
+    opacity: 0.22;
+    transition: opacity 0.15s linear;
+  }
+
+  .pid-method-word.is-lit { opacity: 1; }
+}
+
+/* Compare — two columns, rows fly in from opposite sides */
+
+.pid-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 32px);
+}
+
+.pid-compare-col {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: clamp(24px, 2.6vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pid-compare-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pid-compare-col--bad .pid-compare-label { color: #d3454f; }
+.pid-compare-col--good .pid-compare-label { color: var(--accent); }
+
+.pid-compare-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.4;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-compare-row:first-of-type { border-top: 0; }
+
+.pid-compare-col--bad .pid-compare-row { transform: translateX(-32px); }
+.pid-compare-col--good .pid-compare-row { transform: translateX(32px); }
+
+.pid-compare-row.is-revealed { opacity: 1; transform: none; }
+
+.pid-compare-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pid-compare-icon svg { width: 12px; height: 12px; }
+
+.pid-compare-col--bad .pid-compare-icon { background: rgba(211, 69, 79, 0.12); color: #d3454f; }
+.pid-compare-col--good .pid-compare-icon { background: rgba(60, 131, 246, 0.12); color: var(--accent); }
+
+/* Features grid — 8 cards, same fly-in-from-left + hover lift as
+   .service-tile on the homepage catalog. */
+
+.pid-features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.pid-feature-card {
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0;
+  transform: translateX(-40px);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.3s ease,
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-feature-card.is-revealed { opacity: 1; transform: none; }
+
+.pid-feature-card:hover,
+.pid-feature-card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 16px 32px rgba(60, 131, 246, 0.16);
+}
+
+.pid-feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(60, 131, 246, 0.1);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pid-feature-card:hover .pid-feature-icon {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.pid-feature-icon svg { width: 22px; height: 22px; }
+
+.pid-feature-card h4 { margin: 0; font-size: 17px; }
+
+.pid-feature-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* How it works — vertical timeline. A thin track runs the height of
+   the list; its accent fill grows continuously with scroll progress
+   (plain scroll listener, no pin/pan — much lighter than the homepage
+   path diagram). Each row also reveals independently via
+   IntersectionObserver, same one-shot pattern used everywhere else. */
+
+.pid-steps-list {
+  position: relative;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: 76px;
+}
+
+.pid-steps-track {
+  position: absolute;
+  left: 27px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--line);
+}
+
+.pid-steps-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 0%;
+  background: var(--accent);
+  transition: height 0.1s linear;
+}
+
+.pid-step {
+  position: relative;
+  padding: 18px 0;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-step.is-revealed { opacity: 1; transform: none; }
+
+.pid-step-dot {
+  position: absolute;
+  left: -76px;
+  top: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--icon-muted);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pid-step.is-active .pid-step-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(60, 131, 246, 0.28);
+}
+
+.pid-step h4 { margin: 0 0 6px; font-size: 17px; }
+.pid-step p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
+
+/* Benefits — 6-up grid, fade+rise stagger */
+
+.pid-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.pid-benefit-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-benefit-card.is-revealed { opacity: 1; transform: none; }
+
+.pid-benefit-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(60, 131, 246, 0.1);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pid-benefit-icon svg { width: 22px; height: 22px; }
+
+.pid-benefit-card h4 { margin: 0; font-size: 17px; }
+.pid-benefit-card p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+
+/* Modules — 3-up row */
+
+.pid-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.pid-module-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  padding: clamp(24px, 2.6vw, 32px);
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-module-card.is-revealed { opacity: 1; transform: none; }
+.pid-module-card h4 { margin: 0 0 10px; color: var(--accent); }
+.pid-module-card p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+
+/* Final CTA banner */
+
+.pid-cta-card {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-card);
+  padding: clamp(40px, 5vw, 72px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pid-cta-card.is-revealed { opacity: 1; transform: none; }
+.pid-cta-card h2 { margin: 0; }
+
+.pid-cta-card .btn-accent {
+  background: #fff;
+}
+
+.pid-cta-card .btn-accent .btn-label { color: var(--accent); }
+.pid-cta-card .btn-accent .btn-icon { background: var(--accent); }
+.pid-cta-card .btn-accent .btn-icon svg path { fill: #fff; }
+
+.pid-cta-card .btn-accent:hover,
+.pid-cta-card .btn-accent:focus-visible {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .pid-features-grid { grid-template-columns: repeat(2, 1fr); }
+  .pid-benefits-grid,
+  .pid-modules-grid { grid-template-columns: 1fr 1fr; }
+  .pid-compare-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .pid-features-grid,
+  .pid-benefits-grid,
+  .pid-modules-grid { grid-template-columns: 1fr; }
+  .pid-steps-list { padding-left: 60px; }
+  .pid-step-dot { left: -60px; width: 34px; height: 34px; font-size: 13px; }
+  .pid-steps-track { left: 22px; }
+  .pid-slider-arrow { width: 40px; height: 40px; }
+  .pid-slider-arrow--prev { left: max(0px, calc(50% - var(--slide-half) - 20px)); }
+  .pid-slider-arrow--next { right: max(0px, calc(50% - var(--slide-half) - 20px)); }
+}
+
+@media (max-width: 560px) {
+  .pid-hero-card { padding: 40px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb,
+  .pid-hero-title, .pid-hero-sub, .pid-hero-cta, .pid-slider,
+  .pid-section-head, .pid-compare-row,
+  .pid-feature-card, .pid-step, .pid-benefit-card, .pid-module-card,
+  .pid-cta-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .pid-slide { opacity: 1; transform: none; }
+  .pid-slider-track { transition: none; }
+  .pid-steps-fill { display: none; }
+}
